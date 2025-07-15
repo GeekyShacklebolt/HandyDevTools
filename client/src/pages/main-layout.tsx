@@ -38,17 +38,17 @@ export default function MainLayout() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button 
+              <button
                 onClick={() => navigate('/')}
                 className="flex items-center hover:opacity-80 transition-opacity"
               >
                 <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                   <Wrench className="inline mr-2 h-6 w-6" />
-                  HandyDevTools
+                  HandyDevTools - Your one-stop utility kit
                 </h1>
               </button>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <Button
@@ -63,7 +63,7 @@ export default function MainLayout() {
                   <Moon className="h-5 w-5" />
                 )}
               </Button>
-              
+
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"

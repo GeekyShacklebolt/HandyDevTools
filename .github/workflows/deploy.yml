@@ -26,9 +26,7 @@ jobs:
       run: npm ci
 
     - name: Build
-      run: |
-        cd client
-        npm run build
+      run: npm run build
 
     - name: Setup Pages
       uses: actions/configure-pages@v4

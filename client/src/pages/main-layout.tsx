@@ -179,15 +179,39 @@ export default function MainLayout() {
           {currentTool ? (
             <Tool />
           ) : (
-            <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-              <div className="text-center">
-                <Wrench className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                  Select a Tool
-                </h2>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Choose a tool from the sidebar to get started
-                </p>
+            <div className="h-full flex items-start justify-center bg-gray-50 dark:bg-gray-900 p-8 pt-16">
+              <div className="text-center max-w-2xl">
+                <div className="mb-8">
+                  <Wrench className="mx-auto h-16 w-16 text-blue-500 dark:text-blue-400 mb-4" />
+                  <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+                    Your One-Stop Utility Kit
+                  </h2>
+                  <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
+                    Choose a tool from the sidebar to get started with your development tasks.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Text & Data</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Convert, format, and manipulate text and data formats</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Code Tools</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Format, beautify, and convert code between languages</p>
+                  </div>
+                  <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Web Utilities</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">URL parsing, encoding, and web development tools</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <h3 className="font-semibold text-blue-900 dark:text-blue-100 mb-2">💡 Quick Start</h3>
+                  <p className="text-sm text-blue-700 dark:text-blue-300">
+                    Use the search bar in the sidebar to quickly find the tool you need, or browse through the categories to discover new utilities.
+                  </p>
+                </div>
               </div>
             </div>
           )}

@@ -38,7 +38,7 @@ export default function MainLayout() {
         <div className="px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <button 
+              <button
                 onClick={() => navigate('/')}
                 className="flex items-center hover:opacity-80 transition-opacity"
               >
@@ -48,7 +48,7 @@ export default function MainLayout() {
                 </h1>
               </button>
             </div>
-            
+
             <div className="flex items-center space-x-4">
               {/* Theme Toggle */}
               <Button
@@ -63,7 +63,7 @@ export default function MainLayout() {
                   <Moon className="h-5 w-5" />
                 )}
               </Button>
-              
+
               {/* Mobile Menu Button */}
               <Button
                 variant="ghost"
@@ -80,7 +80,7 @@ export default function MainLayout() {
 
       <div className="flex flex-1">
         {/* Left Sidebar - Desktop */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:border-gray-300 lg:dark:border-gray-600 lg:bg-white lg:dark:bg-gray-800">
+        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:border-gray-300 lg:dark:border-gray-600 lg:bg-white lg:dark:bg-gray-800 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]">
           <div className="flex-1 overflow-y-auto p-4">
             {/* Search */}
             <div className="mb-6">

@@ -22,11 +22,11 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
             <Link href="/" className="flex items-center">
               <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                 <Wrench className="inline mr-2 h-6 w-6" />
-                HandyDevTools - Your one-stop utility kit
+                HandyDevTools
               </h1>
             </Link>
           </div>
-
+          
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
             <div className="hidden md:block relative">
@@ -39,7 +39,7 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
                 className="w-64 pl-10"
               />
             </div>
-
+            
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -53,7 +53,7 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-
+            
             {/* Mobile Menu Button */}
             {showMobileMenuButton && (
               <Button

@@ -1,0 +1,116 @@
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { FileText } from "lucide-react";
+import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { generateLoremIpsum } from "@/lib/utils/advanced-converters";
+
+export default function LoremIpsum() {
+  const [output, setOutput] = useState("");
+  const [paragraphs, setParagraphs] = useState("3");
+  const [wordsPerParagraph, setWordsPerParagraph] = useState("50");
+  const [format, setFormat] = useState("paragraphs");
+
+  const generate = () => {
+    const numParagraphs = parseInt(paragraphs) || 1;
+    const numWords = parseInt(wordsPerParagraph) || 50;
+    
+    if (format === "paragraphs") {
+      const lorem = generateLoremIpsum(numParagraphs, numWords);
+      setOutput(lorem);
+    } else if (format === "words") {
+      const lorem = generateLoremIpsum(1, parseInt(paragraphs) || 50);
+      setOutput(lorem.replace(/\.\s*/g, ' ').trim());
+    } else if (format === "sentences") {
+      const lorem = generateLoremIpsum(Math.ceil(parseInt(paragraphs) / 5), 10);
+      const sentences = lorem.split('.').filter(s => s.trim().length > 0);
+      setOutput(sentences.slice(0, parseInt(paragraphs)).map(s => s.trim() + '.').join(' '));
+    }
+  };
+
+  const clearAll = () => {
+    setOutput("");
+  };
+
+  return (
+    <ToolLayout
+      title="Lorem Ipsum Generator"
+      description="Generate placeholder text"
+      icon={<FileText className="h-6 w-6 text-blue-500" />}
+      outputValue={output}
+      infoContent={
+        <p>
+          Lorem Ipsum is placeholder text commonly used in the printing and typesetting industry. 
+          It's used to demonstrate the visual form of a document or a typeface without relying on meaningful content.
+        </p>
+      }
+    >
+      <ToolInput title="Settings">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="format">Format</Label>
+            <Select value={format} onValueChange={setFormat}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paragraphs">Paragraphs</SelectItem>
+                <SelectItem value="words">Words</SelectItem>
+                <SelectItem value="sentences">Sentences</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="count">
+                {format === 'paragraphs' ? 'Paragraphs' : 
+                 format === 'words' ? 'Words' : 'Sentences'}
+              </Label>
+              <Input
+                id="count"
+                type="number"
+                min="1"
+                max="100"
+                value={paragraphs}
+                onChange={(e) => setParagraphs(e.target.value)}
+              />
+            </div>
+            
+            {format === 'paragraphs' && (
+              <div>
+                <Label htmlFor="words-per-paragraph">Words per Paragraph</Label>
+                <Input
+                  id="words-per-paragraph"
+                  type="number"
+                  min="10"
+                  max="200"
+                  value={wordsPerParagraph}
+                  onChange={(e) => setWordsPerParagraph(e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+          
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={generate}>Generate</Button>
+            <Button variant="outline" onClick={clearAll}>Clear</Button>
+          </div>
+        </div>
+      </ToolInput>
+
+      <ToolOutput title="Output" value={output}>
+        <div className="space-y-4">
+          <div>
+            <Label>Generated Text</Label>
+            <div className="p-3 bg-muted rounded-md text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">
+              {output || "No text generated"}
+            </div>
+          </div>
+        </div>
+      </ToolOutput>
+    </ToolLayout>
+  );
+}

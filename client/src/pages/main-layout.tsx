@@ -4,7 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
 import { toolCategories, getToolById } from "@/lib/tools-config";
-import { Search, Moon, Sun, Menu, Wrench, X } from "lucide-react";
+import { Search, Moon, Sun, Menu, Wrench, X, Trash2 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
 import Tool from "./tool";
 
 export default function MainLayout() {
@@ -12,6 +14,8 @@ export default function MainLayout() {
   const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [clearTrigger, setClearTrigger] = useState(0);
+  const hasToolStates = useHasToolStates();
 
   // Refs for search inputs
   const desktopSearchRef = useRef<HTMLInputElement>(null);
@@ -81,7 +85,8 @@ export default function MainLayout() {
   }, [isMobileMenuOpen]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <header className="bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 sticky top-0 z-40">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -98,7 +103,32 @@ export default function MainLayout() {
               </button>
             </div>
 
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2">
+              {/* Recycle Bin Button */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="relative">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        if (hasToolStates) {
+                          clearAllToolStates();
+                          // Force re-render by incrementing trigger
+                          setClearTrigger(prev => prev + 1);
+                        }
+                      }}
+                      className={`h-10 w-10 ${!hasToolStates ? 'opacity-50' : ''}`}
+                    >
+                      <Trash2 className={`h-5 w-5 ${hasToolStates ? 'text-red-500' : 'text-gray-400'}`} />
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{hasToolStates ? 'Clear all tools' : 'No data to reset'}</p>
+                </TooltipContent>
+              </Tooltip>
+
               {/* Theme Toggle */}
               <Button
                 variant="ghost"
@@ -228,7 +258,7 @@ export default function MainLayout() {
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
           {currentTool ? (
-            <Tool />
+            <Tool key={clearTrigger} />
           ) : (
             <div className="h-full flex items-start justify-center bg-gray-50 dark:bg-gray-900 p-8 pt-16">
               <div className="text-center max-w-2xl">
@@ -269,5 +299,6 @@ export default function MainLayout() {
         </div>
       </div>
     </div>
+    </TooltipProvider>
   );
 }

@@ -7,27 +7,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileCode, Check, X, Search } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { JSONPath } from "jsonpath-plus";
+import { useToolState, clearToolState } from "@/hooks/use-tool-state";
 
 export default function JSONFormatter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [isValid, setIsValid] = useState<boolean | null>(null);
-  const [indentSize, setIndentSize] = useState("2");
-  const [jsonPath, setJsonPath] = useState("");
-  const [pathResult, setPathResult] = useState("");
-  const [parsedJson, setParsedJson] = useState<any>(null);
+  const [state, setState] = useToolState("json-formatter", {
+    input: "",
+    output: "",
+    isValid: null as boolean | null,
+    indentSize: "2",
+    jsonPath: "",
+    pathResult: "",
+    parsedJson: null as any
+  });
+
+  const { input, output, isValid, indentSize, jsonPath, pathResult, parsedJson } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const formatJSON = () => {
     try {
       const parsed = JSON.parse(input);
       const formatted = JSON.stringify(parsed, null, parseInt(indentSize));
-      setOutput(formatted);
-      setIsValid(true);
-      setParsedJson(parsed);
+      updateState({
+        output: formatted,
+        isValid: true,
+        parsedJson: parsed
+      });
     } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : 'Invalid JSON'}`);
-      setIsValid(false);
-      setParsedJson(null);
+      updateState({
+        output: `Error: ${error instanceof Error ? error.message : 'Invalid JSON'}`,
+        isValid: false,
+        parsedJson: null
+      });
     }
   };
 
@@ -35,49 +48,57 @@ export default function JSONFormatter() {
     try {
       const parsed = JSON.parse(input);
       const minified = JSON.stringify(parsed);
-      setOutput(minified);
-      setIsValid(true);
-      setParsedJson(parsed);
+      updateState({
+        output: minified,
+        isValid: true,
+        parsedJson: parsed
+      });
     } catch (error) {
-      setOutput(`Error: ${error instanceof Error ? error.message : 'Invalid JSON'}`);
-      setIsValid(false);
-      setParsedJson(null);
+      updateState({
+        output: `Error: ${error instanceof Error ? error.message : 'Invalid JSON'}`,
+        isValid: false,
+        parsedJson: null
+      });
     }
   };
 
   const validateJSON = () => {
     try {
       const parsed = JSON.parse(input);
-      setIsValid(true);
-      setOutput("✓ Valid JSON");
-      setParsedJson(parsed);
+      updateState({
+        isValid: true,
+        output: "✓ Valid JSON",
+        parsedJson: parsed
+      });
     } catch (error) {
-      setIsValid(false);
-      setOutput(`✗ Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      setParsedJson(null);
+      updateState({
+        isValid: false,
+        output: `✗ Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        parsedJson: null
+      });
     }
   };
 
   const searchJsonPath = () => {
     if (!parsedJson) {
-      setPathResult("Please format or validate JSON first");
+      updateState({ pathResult: "Please format or validate JSON first" });
       return;
     }
 
     if (!jsonPath.trim()) {
-      setPathResult("");
+      updateState({ pathResult: "" });
       return;
     }
 
     try {
       const result = JSONPath({ path: jsonPath, json: parsedJson });
       if (result.length === 0) {
-        setPathResult("No matches found");
+        updateState({ pathResult: "No matches found" });
       } else {
-        setPathResult(JSON.stringify(result, null, 2));
+        updateState({ pathResult: JSON.stringify(result, null, 2) });
       }
     } catch (error) {
-      setPathResult(`JSONPath Error: ${error instanceof Error ? error.message : 'Invalid path'}`);
+      updateState({ pathResult: `JSONPath Error: ${error instanceof Error ? error.message : 'Invalid path'}` });
     }
   };
 
@@ -87,7 +108,7 @@ export default function JSONFormatter() {
       if (parsedJson && jsonPath.trim()) {
         searchJsonPath();
       } else if (!jsonPath.trim()) {
-        setPathResult("");
+        updateState({ pathResult: "" });
       }
     }, 300); // 300ms debounce
 
@@ -95,12 +116,14 @@ export default function JSONFormatter() {
   }, [jsonPath, parsedJson]);
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setIsValid(null);
-    setJsonPath("");
-    setPathResult("");
-    setParsedJson(null);
+    updateState({
+      input: "",
+      output: "",
+      isValid: null,
+      jsonPath: "",
+      pathResult: "",
+      parsedJson: null
+    });
   };
 
   const loadExample = () => {
@@ -133,7 +156,7 @@ export default function JSONFormatter() {
     }
   }
 }`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -145,12 +168,12 @@ export default function JSONFormatter() {
       infoContent={
         <div>
           <p className="mb-3">
-            JSON (JavaScript Object Notation) is a lightweight data-interchange format. 
-            This tool helps you format, validate, and minify JSON data for better readability 
+            JSON (JavaScript Object Notation) is a lightweight data-interchange format.
+            This tool helps you format, validate, and minify JSON data for better readability
             and debugging.
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            <strong>JSONPath Search:</strong> Use JSONPath expressions to query and extract specific data from your JSON. 
+            <strong>JSONPath Search:</strong> Use JSONPath expressions to query and extract specific data from your JSON.
             Available after formatting or validating JSON.
           </p>
         </div>
@@ -164,14 +187,14 @@ export default function JSONFormatter() {
               id="json-input"
               placeholder='{"name": "John", "age": 30}'
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex items-center space-x-2">
             <Label htmlFor="indent-size">Indent Size:</Label>
-            <Select value={indentSize} onValueChange={setIndentSize}>
+            <Select value={indentSize} onValueChange={(value) => updateState({ indentSize: value })}>
               <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
@@ -182,7 +205,7 @@ export default function JSONFormatter() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={formatJSON}>Format</Button>
             <Button variant="outline" onClick={minifyJSON}>Minify</Button>
@@ -197,7 +220,7 @@ export default function JSONFormatter() {
         <div className="space-y-4">
           {isValid !== null && (
             <div className={`flex items-center space-x-2 p-2 rounded ${
-              isValid ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' : 
+              isValid ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' :
               'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
             }`}>
               {isValid ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
@@ -206,7 +229,7 @@ export default function JSONFormatter() {
               </span>
             </div>
           )}
-          
+
           <div>
             <Label>Formatted JSON</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">
@@ -224,7 +247,7 @@ export default function JSONFormatter() {
                       id="jsonpath-input"
                       placeholder="$.store.book[*].author"
                       value={jsonPath}
-                      onChange={(e) => setJsonPath(e.target.value)}
+                      onChange={(e) => updateState({ jsonPath: e.target.value })}
                       className="flex-1"
                     />
                     <Button onClick={searchJsonPath} size="sm" variant="outline">
@@ -236,7 +259,7 @@ export default function JSONFormatter() {
                     Examples: $.store.book[*].title, $.store.bicycle.price, $..author
                   </p>
                 </div>
-                
+
                 {pathResult && (
                   <div>
                     <Label>JSONPath Result</Label>

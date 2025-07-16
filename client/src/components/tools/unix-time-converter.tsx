@@ -4,71 +4,88 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Clock, Plus, Trash2 } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState, clearToolState } from "@/hooks/use-tool-state";
 
 export default function UnixTimeConverter() {
-  const [unixInput, setUnixInput] = useState("");
-  const [humanInput, setHumanInput] = useState("");
-  const [humanOutput, setHumanOutput] = useState("");
-  const [unixOutput, setUnixOutput] = useState("");
-  const [isoOutput, setIsoOutput] = useState("");
+  const [state, setState] = useToolState("unix-time-converter", {
+    unixInput: "",
+    humanInput: "",
+    humanOutput: "",
+    unixOutput: "",
+    isoOutput: ""
+  });
 
-  const convertFromUnix = () => {
+  const { unixInput, humanInput, humanOutput, unixOutput, isoOutput } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const convertFromUnix = () => {
     try {
       const timestamp = parseInt(unixInput);
       if (isNaN(timestamp)) {
         throw new Error("Invalid timestamp");
       }
-      
+
       const date = new Date(timestamp * 1000);
-      setHumanOutput(date.toLocaleString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'short'
-      }));
-      setUnixOutput(timestamp.toString());
-      setIsoOutput(date.toISOString());
+      updateState({
+        humanOutput: date.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        }),
+        unixOutput: timestamp.toString(),
+        isoOutput: date.toISOString()
+      });
     } catch (error) {
-      setHumanOutput("Invalid timestamp");
-      setUnixOutput("");
-      setIsoOutput("");
+      updateState({
+        humanOutput: "Invalid timestamp",
+        unixOutput: "",
+        isoOutput: ""
+      });
     }
   };
 
-  const convertToUnix = () => {
+    const convertToUnix = () => {
     try {
       const date = new Date(humanInput);
       if (isNaN(date.getTime())) {
         throw new Error("Invalid date");
       }
-      
+
       const timestamp = Math.floor(date.getTime() / 1000);
-      setUnixOutput(timestamp.toString());
-      setHumanOutput(date.toLocaleString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZoneName: 'short'
-      }));
-      setIsoOutput(date.toISOString());
+      updateState({
+        unixOutput: timestamp.toString(),
+        humanOutput: date.toLocaleString('en-US', {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        }),
+        isoOutput: date.toISOString()
+      });
     } catch (error) {
-      setUnixOutput("Invalid date");
-      setHumanOutput("");
-      setIsoOutput("");
+      updateState({
+        unixOutput: "Invalid date",
+        humanOutput: "",
+        isoOutput: ""
+      });
     }
   };
 
   const getCurrentTime = () => {
     const now = Math.floor(Date.now() / 1000);
-    setUnixInput(now.toString());
+    updateState({ unixInput: now.toString() });
     convertFromUnix();
   };
 
@@ -77,18 +94,20 @@ export default function UnixTimeConverter() {
       const current = parseInt(unixInput);
       if (!isNaN(current)) {
         const newTime = current + seconds;
-        setUnixInput(newTime.toString());
+        updateState({ unixInput: newTime.toString() });
         convertFromUnix();
       }
     }
   };
 
   const clearAll = () => {
-    setUnixInput("");
-    setHumanInput("");
-    setHumanOutput("");
-    setUnixOutput("");
-    setIsoOutput("");
+    updateState({
+      unixInput: "",
+      humanInput: "",
+      humanOutput: "",
+      unixOutput: "",
+      isoOutput: ""
+    });
   };
 
   return (
@@ -99,8 +118,8 @@ export default function UnixTimeConverter() {
       outputValue={unixOutput}
       infoContent={
         <p>
-          Unix time is the number of seconds since January 1, 1970, 00:00:00 UTC (the Unix epoch). 
-          It's widely used in programming and systems administration for storing timestamps in a 
+          Unix time is the number of seconds since January 1, 1970, 00:00:00 UTC (the Unix epoch).
+          It's widely used in programming and systems administration for storing timestamps in a
           standardized format that's independent of timezone.
         </p>
       }
@@ -115,13 +134,13 @@ export default function UnixTimeConverter() {
                 type="text"
                 placeholder="1672531200"
                 value={unixInput}
-                onChange={(e) => setUnixInput(e.target.value)}
+                onChange={(e) => updateState({ unixInput: e.target.value })}
                 className="tool-input"
               />
               <Button onClick={convertFromUnix}>Convert</Button>
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="human-input">Human Date</Label>
             <div className="flex space-x-2 mt-1">
@@ -129,13 +148,13 @@ export default function UnixTimeConverter() {
                 id="human-input"
                 type="datetime-local"
                 value={humanInput}
-                onChange={(e) => setHumanInput(e.target.value)}
+                onChange={(e) => updateState({ humanInput: e.target.value })}
                 className="tool-input"
               />
               <Button onClick={convertToUnix}>Convert</Button>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2 pt-4 border-t">
             <Button variant="outline" onClick={getCurrentTime}>
               <Clock className="h-4 w-4 mr-1" />
@@ -169,14 +188,14 @@ export default function UnixTimeConverter() {
               {humanOutput || "No output"}
             </div>
           </div>
-          
+
           <div>
             <Label>Unix Timestamp</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
               {unixOutput || "No output"}
             </div>
           </div>
-          
+
           <div>
             <Label>ISO 8601</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">

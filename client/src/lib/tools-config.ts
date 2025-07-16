@@ -10,7 +10,7 @@ export interface Tool {
 export const toolCategories = [
   {
     id: "converters",
-    name: "Converters & Encoders",
+    name: "Conversion Tools",
     tools: [
       {
         id: "unix-time",

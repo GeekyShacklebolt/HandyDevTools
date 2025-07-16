@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
 import { toolCategories, getToolById } from "@/lib/tools-config";
-import { Search, Moon, Sun, Menu, Wrench, X, Trash2 } from "lucide-react";
+import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
 import Tool from "./tool";
@@ -15,6 +15,7 @@ export default function MainLayout() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [clearTrigger, setClearTrigger] = useState(0);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const hasToolStates = useHasToolStates();
 
   // Refs for search inputs
@@ -39,17 +40,30 @@ export default function MainLayout() {
     setIsMobileMenuOpen(false);
   };
 
-    // Handle CMD+K shortcut to focus search and ESC to clear
+  // Handle CMD+K shortcut to toggle sidebar and focus search
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      // Check for CMD+K (Mac) or CTRL+K (Windows/Linux)
+      // Check for CMD+\ (Mac) or CTRL+\ (Windows/Linux) - toggle sidebar
+      if ((event.metaKey || event.ctrlKey) && event.key === '\\') {
+        event.preventDefault();
+        setIsSidebarCollapsed(!isSidebarCollapsed);
+      }
+
+      // Check for CMD+K (Mac) or CTRL+K (Windows/Linux) - focus search
       if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
         event.preventDefault();
 
-        // Focus the appropriate search input
+        // On desktop, expand sidebar if collapsed and focus search
         if (window.innerWidth >= 1024) {
-          // Desktop: focus desktop search
-          desktopSearchRef.current?.focus();
+          if (isSidebarCollapsed) {
+            setIsSidebarCollapsed(false);
+            // Small delay to ensure the sidebar is rendered
+            setTimeout(() => {
+              desktopSearchRef.current?.focus();
+            }, 100);
+          } else {
+            desktopSearchRef.current?.focus();
+          }
         } else {
           // Mobile: open mobile menu and focus mobile search
           if (!isMobileMenuOpen) {
@@ -82,7 +96,7 @@ export default function MainLayout() {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileMenuOpen]);
+  }, [isMobileMenuOpen, isSidebarCollapsed]);
 
   return (
     <TooltipProvider>
@@ -120,7 +134,7 @@ export default function MainLayout() {
                       }}
                       className={`h-10 w-10 ${!hasToolStates ? 'opacity-50' : ''}`}
                     >
-                      <Trash2 className={`h-5 w-5 ${hasToolStates ? 'text-red-500' : 'text-gray-400'}`} />
+                      <Trash2 className={`h-5 w-5 ${hasToolStates ? 'text-white' : 'text-gray-400'}`} />
                     </Button>
                   </div>
                 </TooltipTrigger>
@@ -159,25 +173,59 @@ export default function MainLayout() {
 
       <div className="flex flex-1">
         {/* Left Sidebar - Desktop */}
-        <div className="hidden lg:flex lg:w-80 lg:flex-col lg:border-r lg:border-gray-300 lg:dark:border-gray-600 lg:bg-white lg:dark:bg-gray-800 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)]">
+        <div className={`hidden lg:flex lg:flex-col lg:border-r lg:border-gray-300 lg:dark:border-gray-600 lg:bg-white lg:dark:bg-gray-800 lg:sticky lg:top-16 lg:h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'lg:w-16' : 'lg:w-[280px]'
+        }`}>
           <div className="flex-1 overflow-y-auto p-4">
-            {/* Search */}
+            {/* Search and Collapse Button - Inline */}
             <div className="mb-6">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  type="text"
-                  placeholder="Search tools... (⌘K)"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-full"
-                  ref={desktopSearchRef}
-                />
-              </div>
+              {!isSidebarCollapsed ? (
+                <div className="flex items-center space-x-1">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Search tools... [⌘K]"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10 w-full"
+                      ref={desktopSearchRef}
+                    />
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsSidebarCollapsed(true)}
+                    className="h-10 w-10"
+                  >
+                    <ChevronsLeft className="h-4 w-4" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex justify-center">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setIsSidebarCollapsed(false)}
+                        className="h-10 w-10"
+                      >
+                        <ChevronsRight className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Expand sidebar [⌘\]</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              )}
             </div>
 
-            {/* Tool Categories */}
-            <div className="space-y-6">
+            {/* Tool Categories - Only show when expanded */}
+            <div className={`space-y-6 transition-all duration-300 ease-in-out ${
+              isSidebarCollapsed ? 'opacity-0 max-h-0 overflow-hidden' : 'opacity-100 max-h-[1000px]'
+            }`}>
               {filteredCategories.map((category) => (
                 <div key={category.id}>
                   <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3 uppercase tracking-wide">

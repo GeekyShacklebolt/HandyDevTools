@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,10 @@ export default function MainLayout() {
   const { theme, toggleTheme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Refs for search inputs
+  const desktopSearchRef = useRef<HTMLInputElement>(null);
+  const mobileSearchRef = useRef<HTMLInputElement>(null);
 
   // Extract tool ID from URL
   const toolId = location.startsWith('/tool/') ? location.split('/tool/')[1] : null;
@@ -30,6 +34,36 @@ export default function MainLayout() {
     navigate(`/tool/${newToolId}`);
     setIsMobileMenuOpen(false);
   };
+
+  // Handle CMD+K shortcut to focus search
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for CMD+K (Mac) or CTRL+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+
+        // Focus the appropriate search input
+        if (window.innerWidth >= 1024) {
+          // Desktop: focus desktop search
+          desktopSearchRef.current?.focus();
+        } else {
+          // Mobile: open mobile menu and focus mobile search
+          if (!isMobileMenuOpen) {
+            setIsMobileMenuOpen(true);
+            // Small delay to ensure the mobile menu is rendered
+            setTimeout(() => {
+              mobileSearchRef.current?.focus();
+            }, 100);
+          } else {
+            mobileSearchRef.current?.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isMobileMenuOpen]);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
@@ -88,10 +122,11 @@ export default function MainLayout() {
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search tools..."
+                  placeholder="Search tools... (⌘K)"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-10 w-full"
+                  ref={desktopSearchRef}
                 />
               </div>
             </div>
@@ -140,6 +175,7 @@ export default function MainLayout() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       className="pl-10 w-full"
+                      ref={mobileSearchRef}
                     />
                   </div>
                 </div>

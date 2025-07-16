@@ -18,10 +18,11 @@ export default function JSONFormatter() {
     jsonPath: "",
     pathResult: "",
     parsedJson: null as any,
-    collapsedNodes: [] as string[]
+    collapsedNodes: [] as string[],
+    displayMode: "formatted" as "formatted" | "minified"
   });
 
-  const { input, output, isValid, indentSize, jsonPath, pathResult, parsedJson } = state;
+  const { input, output, isValid, indentSize, jsonPath, pathResult, parsedJson, displayMode } = state;
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
@@ -34,7 +35,8 @@ export default function JSONFormatter() {
       updateState({
         output: formatted,
         isValid: true,
-        parsedJson: parsed
+        parsedJson: parsed,
+        displayMode: "formatted"
       });
     } catch (error) {
       updateState({
@@ -52,7 +54,8 @@ export default function JSONFormatter() {
       updateState({
         output: minified,
         isValid: true,
-        parsedJson: parsed
+        parsedJson: parsed,
+        displayMode: "minified"
       });
     } catch (error) {
       updateState({
@@ -140,7 +143,8 @@ export default function JSONFormatter() {
       isValid: null,
       jsonPath: "",
       pathResult: "",
-      parsedJson: null
+      parsedJson: null,
+      displayMode: "formatted"
     });
   };
 
@@ -343,7 +347,7 @@ export default function JSONFormatter() {
                 <div
                   className="text-foreground font-mono text-sm whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: parsedJson ? renderCollapsibleJSON(parsedJson) : (output ? highlightJSON(output) : "No output")
+                    __html: parsedJson && displayMode === "formatted" ? renderCollapsibleJSON(parsedJson) : (output ? highlightJSON(output) : "No output")
                   }}
                 />
               )}

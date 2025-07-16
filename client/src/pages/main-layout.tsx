@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
 import { toolCategories, getToolById } from "@/lib/tools-config";
-import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
 import Tool from "./tool";
@@ -16,6 +16,7 @@ export default function MainLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [clearTrigger, setClearTrigger] = useState(0);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedToolIndex, setSelectedToolIndex] = useState(0);
   const hasToolStates = useHasToolStates();
 
   // Refs for search inputs
@@ -35,9 +36,21 @@ export default function MainLayout() {
     )
   })).filter(category => category.tools.length > 0);
 
+  // Create flattened list of all filtered tools for keyboard navigation
+  const allFilteredTools = filteredCategories.flatMap(category => category.tools);
+
   const handleToolClick = (newToolId: string) => {
     navigate(`/tool/${newToolId}`);
     setIsMobileMenuOpen(false);
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setSelectedToolIndex(0); // Reset selection when search changes
+  };
+
+  const getToolIndexInFlattenedList = (toolId: string) => {
+    return allFilteredTools.findIndex(tool => tool.id === toolId);
   };
 
   // Handle CMD+K shortcut to toggle sidebar and focus search
@@ -82,6 +95,7 @@ export default function MainLayout() {
       if (event.key === 'Escape') {
         // Clear search query
         setSearchQuery('');
+        setSelectedToolIndex(0);
 
         // Remove focus from search inputs
         desktopSearchRef.current?.blur();
@@ -92,11 +106,34 @@ export default function MainLayout() {
           setIsMobileMenuOpen(false);
         }
       }
+
+      // Handle keyboard navigation in search results
+      if (searchQuery && allFilteredTools.length > 0) {
+        if (event.key === 'ArrowDown') {
+          event.preventDefault();
+          setSelectedToolIndex(prev =>
+            prev < allFilteredTools.length - 1 ? prev + 1 : 0
+          );
+        } else if (event.key === 'ArrowUp') {
+          event.preventDefault();
+          setSelectedToolIndex(prev =>
+            prev > 0 ? prev - 1 : allFilteredTools.length - 1
+          );
+        } else if (event.key === 'Enter') {
+          event.preventDefault();
+          const selectedTool = allFilteredTools[selectedToolIndex];
+          if (selectedTool) {
+            handleToolClick(selectedTool.id);
+            setSearchQuery('');
+            setSelectedToolIndex(0);
+          }
+        }
+      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isMobileMenuOpen, isSidebarCollapsed]);
+  }, [isMobileMenuOpen, isSidebarCollapsed, searchQuery, allFilteredTools, selectedToolIndex]);
 
   return (
     <TooltipProvider>
@@ -187,10 +224,13 @@ export default function MainLayout() {
                       type="text"
                       placeholder="Search tools... [⌘K]"
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10 w-full"
                       ref={desktopSearchRef}
                     />
+                    {searchQuery && allFilteredTools.length > 0 && (
+                      <ArrowRight className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                    )}
                   </div>
                   <Button
                     variant="ghost"
@@ -232,19 +272,26 @@ export default function MainLayout() {
                     {category.name}
                   </h3>
                   <div className="space-y-1">
-                    {category.tools.map((tool) => (
-                      <button
-                        key={tool.id}
-                        onClick={() => handleToolClick(tool.id)}
-                        className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                          toolId === tool.id
-                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                        }`}
-                      >
-                        {tool.name}
-                      </button>
-                    ))}
+                    {category.tools.map((tool) => {
+                      const toolIndex = getToolIndexInFlattenedList(tool.id);
+                      const isSelected = searchQuery && toolIndex === selectedToolIndex;
+
+                      return (
+                        <button
+                          key={tool.id}
+                          onClick={() => handleToolClick(tool.id)}
+                          className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                            toolId === tool.id
+                              ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                              : isSelected
+                              ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          {tool.name}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ))}
@@ -266,10 +313,13 @@ export default function MainLayout() {
                       type="text"
                       placeholder="Search tools..."
                       value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10 w-full"
                       ref={mobileSearchRef}
                     />
+                    {searchQuery && allFilteredTools.length > 0 && (
+                      <ArrowRight className="absolute right-3 top-3 h-4 w-4 text-gray-400" />
+                    )}
                   </div>
                 </div>
 
@@ -281,19 +331,26 @@ export default function MainLayout() {
                         {category.name}
                       </h3>
                       <div className="space-y-1">
-                        {category.tools.map((tool) => (
-                          <button
-                            key={tool.id}
-                            onClick={() => handleToolClick(tool.id)}
-                            className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                              toolId === tool.id
-                                ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
-                                : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                            }`}
-                          >
-                            {tool.name}
-                          </button>
-                        ))}
+                        {category.tools.map((tool) => {
+                          const toolIndex = getToolIndexInFlattenedList(tool.id);
+                          const isSelected = searchQuery && toolIndex === selectedToolIndex;
+
+                          return (
+                            <button
+                              key={tool.id}
+                              onClick={() => handleToolClick(tool.id)}
+                              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                                toolId === tool.id
+                                  ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300'
+                                  : isSelected
+                                  ? 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100'
+                                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              {tool.name}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

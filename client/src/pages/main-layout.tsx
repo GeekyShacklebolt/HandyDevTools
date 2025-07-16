@@ -35,7 +35,7 @@ export default function MainLayout() {
     setIsMobileMenuOpen(false);
   };
 
-  // Handle CMD+K shortcut to focus search
+    // Handle CMD+K shortcut to focus search and ESC to clear
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Check for CMD+K (Mac) or CTRL+K (Windows/Linux)
@@ -57,6 +57,21 @@ export default function MainLayout() {
           } else {
             mobileSearchRef.current?.focus();
           }
+        }
+      }
+
+      // Check for ESC key
+      if (event.key === 'Escape') {
+        // Clear search query
+        setSearchQuery('');
+
+        // Remove focus from search inputs
+        desktopSearchRef.current?.blur();
+        mobileSearchRef.current?.blur();
+
+        // Close mobile menu if open
+        if (isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
         }
       }
     };

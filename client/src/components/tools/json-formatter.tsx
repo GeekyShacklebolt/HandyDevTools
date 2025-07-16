@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileCode, Check, X, Search } from "lucide-react";
+import { FileCode, Check, X, Search, Trash2, ChevronRight, ChevronDown } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { JSONPath } from "jsonpath-plus";
 import { useToolState, clearToolState } from "@/hooks/use-tool-state";
@@ -17,7 +17,8 @@ export default function JSONFormatter() {
     indentSize: "2",
     jsonPath: "",
     pathResult: "",
-    parsedJson: null as any
+    parsedJson: null as any,
+    collapsedNodes: [] as string[]
   });
 
   const { input, output, isValid, indentSize, jsonPath, pathResult, parsedJson } = state;
@@ -102,6 +103,23 @@ export default function JSONFormatter() {
     }
   };
 
+  // Auto-format JSON as user types or changes indent
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (input.trim()) {
+        formatJSON();
+      } else {
+        updateState({
+          output: "",
+          isValid: null,
+          parsedJson: null
+        });
+      }
+    }, 500); // 500ms debounce for auto-formatting
+
+    return () => clearTimeout(timeoutId);
+  }, [input, indentSize]);
+
   // Real-time JSONPath search
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -124,6 +142,86 @@ export default function JSONFormatter() {
       pathResult: "",
       parsedJson: null
     });
+  };
+
+    const renderCollapsibleJSON = (obj: any, path: string = "", indent: number = 0): string => {
+    const indentStr = " ".repeat(indent * parseInt(indentSize));
+    const nextIndentStr = " ".repeat((indent + 1) * parseInt(indentSize));
+
+    if (obj === null) return `<span style="color: #8b5cf6;">null</span>`;
+    if (typeof obj === "boolean") return `<span style="color: #8b5cf6;">${obj}</span>`;
+    if (typeof obj === "number") return `<span style="color: #f59e0b;">${obj}</span>`;
+    if (typeof obj === "string") return `<span style="color: #10b981;">"${obj}"</span>`;
+
+        if (Array.isArray(obj)) {
+      if (obj.length === 0) return "[]";
+
+      const isCollapsed = state.collapsedNodes?.includes(path) || false;
+      const toggleIcon = isCollapsed ?
+        `<span class="cursor-pointer inline-block w-4 h-4 mr-1" onclick="toggleNode('${path}')">▶</span>` :
+        `<span class="cursor-pointer inline-block w-4 h-4 mr-1" onclick="toggleNode('${path}')">▼</span>`;
+
+      if (isCollapsed) {
+        return `${toggleIcon}[<span style="color: #8b5cf6;">${obj.length} items</span>]`;
+      }
+
+      const items = obj.map((item, index) =>
+        renderCollapsibleJSON(item, `${path}[${index}]`, indent + 1)
+      ).join(`,\n${nextIndentStr}`);
+
+      return `${toggleIcon}[\n${nextIndentStr}${items}\n${indentStr}]`;
+    }
+
+        if (typeof obj === "object") {
+      const keys = Object.keys(obj);
+      if (keys.length === 0) return "{}";
+
+      const isCollapsed = state.collapsedNodes?.includes(path) || false;
+      const toggleIcon = isCollapsed ?
+        `<span class="cursor-pointer inline-block w-4 h-4 mr-1" onclick="toggleNode('${path}')">▶</span>` :
+        `<span class="cursor-pointer inline-block w-4 h-4 mr-1" onclick="toggleNode('${path}')">▼</span>`;
+
+      if (isCollapsed) {
+        return `${toggleIcon}{<span style="color: #8b5cf6;">${keys.length} properties</span>}`;
+      }
+
+      const items = keys.map(key => {
+        const keyPath = path ? `${path}.${key}` : key;
+        const value = renderCollapsibleJSON(obj[key], keyPath, indent + 1);
+        return `<span style="color: #ffffff;">"${key}"</span>: ${value}`;
+      }).join(`,\n${nextIndentStr}`);
+
+      return `${toggleIcon}{\n${nextIndentStr}${items}\n${indentStr}}`;
+    }
+
+    return String(obj);
+  };
+
+  const toggleNode = useCallback((path: string) => {
+    const newCollapsedNodes = [...(state.collapsedNodes || [])];
+    const index = newCollapsedNodes.indexOf(path);
+    if (index > -1) {
+      newCollapsedNodes.splice(index, 1);
+    } else {
+      newCollapsedNodes.push(path);
+    }
+    updateState({ collapsedNodes: newCollapsedNodes });
+  }, [state.collapsedNodes, updateState]);
+
+  // Make toggleNode available globally for onclick handlers
+  useEffect(() => {
+    (window as any).toggleNode = toggleNode;
+    return () => {
+      delete (window as any).toggleNode;
+    };
+  }, [state.collapsedNodes, toggleNode]);
+
+  const highlightJSON = (jsonString: string) => {
+    return jsonString
+      .replace(/"([^"]+)":/g, '<span style="color: #ffffff;">"$1"</span>:')
+      .replace(/"([^"]*)"(?=\s*[,}\]])/g, '<span style="color: #10b981;">"$1"</span>')
+      .replace(/\b(true|false|null)\b/g, '<span style="color: #8b5cf6;">$1</span>')
+      .replace(/\b(\d+(?:\.\d+)?)\b/g, '<span style="color: #f59e0b;">$1</span>');
   };
 
   const loadExample = () => {
@@ -161,26 +259,49 @@ export default function JSONFormatter() {
 
   return (
     <ToolLayout
-      title="JSON Format/Validate"
-      description="Format, validate and beautify JSON data"
+      title="JSON Formatter"
+      description="Format, beautify and minify JSON data"
       icon={<FileCode className="h-6 w-6 text-blue-500" />}
       outputValue={output}
       infoContent={
         <div>
           <p className="mb-3">
             JSON (JavaScript Object Notation) is a lightweight data-interchange format.
-            This tool helps you format, validate, and minify JSON data for better readability
-            and debugging.
+            This tool helps you format and beautify JSON data for better readability and debugging.
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400">
             <strong>JSONPath Search:</strong> Use JSONPath expressions to query and extract specific data from your JSON.
-            Available after formatting or validating JSON.
+            Available after formatting your JSON.
           </p>
         </div>
       }
     >
-      <ToolInput title="Input">
+      <ToolInput
+        title="Input"
+        headerActions={
+          <Button variant="outline" size="sm" onClick={clearAll}>
+            <Trash2 className="h-4 w-4 mr-1" />
+            Clear
+          </Button>
+        }
+      >
         <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button onClick={formatJSON}>Format</Button>
+            <Button variant="outline" onClick={minifyJSON}>Minify</Button>
+            <Select value={indentSize} onValueChange={(value) => updateState({ indentSize: value })}>
+              <SelectTrigger className="w-24">
+                <SelectValue>Indent</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2 Spaces</SelectItem>
+                <SelectItem value="4">4 Spaces</SelectItem>
+                <SelectItem value="8">8 Spaces</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={loadExample}>Load Example</Button>
+          </div>
+
           <div>
             <Label htmlFor="json-input">JSON Data</Label>
             <Textarea
@@ -188,89 +309,46 @@ export default function JSONFormatter() {
               placeholder='{"name": "John", "age": 30}'
               value={input}
               onChange={(e) => updateState({ input: e.target.value })}
-              className="tool-textarea"
+              className="tool-textarea-json h-[500px] resize-none"
             />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="indent-size">Indent Size:</Label>
-            <Select value={indentSize} onValueChange={(value) => updateState({ indentSize: value })}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="2">2</SelectItem>
-                <SelectItem value="4">4</SelectItem>
-                <SelectItem value="8">8</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={formatJSON}>Format</Button>
-            <Button variant="outline" onClick={minifyJSON}>Minify</Button>
-            <Button variant="outline" onClick={validateJSON}>Validate</Button>
-            <Button variant="outline" onClick={loadExample}>Load Example</Button>
-            <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
         </div>
       </ToolInput>
 
-      <ToolOutput title="Output" value={output}>
+            <ToolOutput title="Output" value={output}>
         <div className="space-y-4">
-          {isValid !== null && (
-            <div className={`flex items-center space-x-2 p-2 rounded ${
-              isValid ? 'bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-200' :
-              'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-200'
-            }`}>
-              {isValid ? <Check className="h-4 w-4" /> : <X className="h-4 w-4" />}
-              <span className="text-sm font-medium">
-                {isValid ? 'Valid JSON' : 'Invalid JSON'}
-              </span>
-            </div>
-          )}
-
+          {/* JSONPath Search aligned with buttons */}
           <div>
-            <Label>Formatted JSON</Label>
-            <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">
-              {output || "No output"}
-            </div>
+            <Input
+              id="jsonpath-input"
+              placeholder="JSON Path e.g: $.store.book[*].author"
+              value={jsonPath}
+              onChange={(e) => updateState({ jsonPath: e.target.value })}
+              className="h-10"
+              disabled={!parsedJson}
+            />
           </div>
 
-          {parsedJson && (
-            <div className="border-t pt-4">
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="jsonpath-input">JSONPath Search</Label>
-                  <div className="flex space-x-2 mt-1">
-                    <Input
-                      id="jsonpath-input"
-                      placeholder="$.store.book[*].author"
-                      value={jsonPath}
-                      onChange={(e) => updateState({ jsonPath: e.target.value })}
-                      className="flex-1"
-                    />
-                    <Button onClick={searchJsonPath} size="sm" variant="outline">
-                      <Search className="h-4 w-4 mr-1" />
-                      Search
-                    </Button>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Examples: $.store.book[*].title, $.store.bicycle.price, $..author
-                  </p>
-                </div>
-
-                {pathResult && (
-                  <div>
-                    <Label>JSONPath Result</Label>
-                    <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-48 overflow-y-auto">
-                      {pathResult}
-                    </div>
-                  </div>
-                )}
-              </div>
+          <div>
+            <Label>{jsonPath.trim() ? 'JSONPath Result' : 'Formatted JSON'}</Label>
+            <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-[500px] overflow-y-auto">
+                                          {jsonPath.trim() && pathResult ? (
+                <div
+                  className="text-foreground font-mono text-sm whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: highlightJSON(pathResult)
+                  }}
+                />
+              ) : (
+                <div
+                  className="text-foreground font-mono text-sm whitespace-pre-wrap"
+                  dangerouslySetInnerHTML={{
+                    __html: parsedJson ? renderCollapsibleJSON(parsedJson) : (output ? highlightJSON(output) : "No output")
+                  }}
+                />
+              )}
             </div>
-          )}
+          </div>
         </div>
       </ToolOutput>
     </ToolLayout>

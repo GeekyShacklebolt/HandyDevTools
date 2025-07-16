@@ -25,7 +25,7 @@ export default function ToolLayout({
 
   const copyToClipboard = async () => {
     if (!outputValue) return;
-    
+
     try {
       await navigator.clipboard.writeText(outputValue);
       toast({
@@ -85,18 +85,22 @@ interface ToolInputProps {
   title: string;
   children: React.ReactNode;
   actions?: React.ReactNode;
+  headerActions?: React.ReactNode;
 }
 
-export function ToolInput({ title, children, actions }: ToolInputProps) {
+export function ToolInput({ title, children, actions, headerActions }: ToolInputProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg flex items-center">
-          <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded mr-2">
-            <div className="h-4 w-4 bg-blue-500 dark:bg-blue-400 rounded-sm" />
-          </div>
-          {title}
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center">
+            <div className="p-1 bg-blue-100 dark:bg-blue-900/20 rounded mr-2">
+              <div className="h-4 w-4 bg-blue-500 dark:bg-blue-400 rounded-sm" />
+            </div>
+            {title}
+          </CardTitle>
+          {headerActions}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {children}
@@ -142,8 +146,13 @@ export function ToolOutput({ title, value, canCopy = true, children }: ToolOutpu
             </div>
             {title}
           </CardTitle>
-          {canCopy && value && (
-            <Button variant="outline" size="sm" onClick={copyToClipboard}>
+          {canCopy && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={copyToClipboard}
+              disabled={!value}
+            >
               <Copy className="h-4 w-4 mr-1" />
               Copy
             </Button>

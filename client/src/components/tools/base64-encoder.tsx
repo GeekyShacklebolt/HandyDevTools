@@ -5,38 +5,57 @@ import { Label } from "@/components/ui/label";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { base64Encode, base64Decode } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function Base64Encoder() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("base64-encoder", {
+    input: "",
+    output: "",
+    error: ""
+  });
+
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const encode = () => {
     try {
       const encoded = base64Encode(input);
-      setOutput(encoded);
-      setError("");
+      updateState({
+        output: encoded,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Encoding failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Encoding failed",
+        output: ""
+      });
     }
   };
 
   const decode = () => {
     try {
       const decoded = base64Decode(input);
-      setOutput(decoded);
-      setError("");
+      updateState({
+        output: decoded,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Decoding failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Decoding failed",
+        output: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   return (
@@ -47,8 +66,8 @@ export default function Base64Encoder() {
       outputValue={output}
       infoContent={
         <p>
-          Base64 is a binary-to-text encoding scheme that represents binary data in an ASCII string format. 
-          It's commonly used to encode data that needs to be transmitted over media that are designed to deal 
+          Base64 is a binary-to-text encoding scheme that represents binary data in an ASCII string format.
+          It's commonly used to encode data that needs to be transmitted over media that are designed to deal
           with textual data.
         </p>
       }
@@ -61,11 +80,11 @@ export default function Base64Encoder() {
               id="base64-input"
               placeholder="Enter text to encode or Base64 string to decode"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={encode}>Encode to Base64</Button>
             <Button variant="outline" onClick={decode}>Decode from Base64</Button>
@@ -81,7 +100,7 @@ export default function Base64Encoder() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Result</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

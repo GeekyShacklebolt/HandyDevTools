@@ -5,38 +5,57 @@ import { Label } from "@/components/ui/label";
 import { ArrowRightLeft } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { yamlToJson, jsonToYaml } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function YAMLJSONConverter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("yaml-json-converter", {
+    input: "",
+    output: "",
+    error: ""
+  });
+
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convertToJson = () => {
     try {
       const json = yamlToJson(input);
-      setOutput(json);
-      setError("");
+      updateState({
+        output: json,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "YAML to JSON conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "YAML to JSON conversion failed",
+        output: ""
+      });
     }
   };
 
   const convertToYaml = () => {
     try {
       const yaml = jsonToYaml(input);
-      setOutput(yaml);
-      setError("");
+      updateState({
+        output: yaml,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "JSON to YAML conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "JSON to YAML conversion failed",
+        output: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
@@ -50,7 +69,7 @@ hobbies:
   - reading
   - swimming
   - coding`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -61,8 +80,8 @@ hobbies:
       outputValue={output}
       infoContent={
         <p>
-          YAML (YAML Ain't Markup Language) is a human-readable data serialization standard. 
-          This tool converts between YAML and JSON formats, making it easy to work with configuration 
+          YAML (YAML Ain't Markup Language) is a human-readable data serialization standard.
+          This tool converts between YAML and JSON formats, making it easy to work with configuration
           files and data interchange formats.
         </p>
       }
@@ -75,11 +94,11 @@ hobbies:
               id="yaml-json-input"
               placeholder="Enter YAML or JSON data"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertToJson}>YAML → JSON</Button>
             <Button variant="outline" onClick={convertToYaml}>JSON → YAML</Button>
@@ -96,7 +115,7 @@ hobbies:
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Converted Data</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

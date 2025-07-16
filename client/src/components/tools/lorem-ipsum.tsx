@@ -6,32 +6,41 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { FileText } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { generateLoremIpsum } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function LoremIpsum() {
-  const [output, setOutput] = useState("");
-  const [paragraphs, setParagraphs] = useState("3");
-  const [wordsPerParagraph, setWordsPerParagraph] = useState("50");
-  const [format, setFormat] = useState("paragraphs");
+  const [state, setState] = useToolState("lorem-ipsum", {
+    output: "",
+    paragraphs: "3",
+    wordsPerParagraph: "50",
+    format: "paragraphs"
+  });
 
-  const generate = () => {
+  const { output, paragraphs, wordsPerParagraph, format } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const generate = () => {
     const numParagraphs = parseInt(paragraphs) || 1;
     const numWords = parseInt(wordsPerParagraph) || 50;
-    
+
     if (format === "paragraphs") {
       const lorem = generateLoremIpsum(numParagraphs, numWords);
-      setOutput(lorem);
+      updateState({ output: lorem });
     } else if (format === "words") {
       const lorem = generateLoremIpsum(1, parseInt(paragraphs) || 50);
-      setOutput(lorem.replace(/\.\s*/g, ' ').trim());
+      updateState({ output: lorem.replace(/\.\s*/g, ' ').trim() });
     } else if (format === "sentences") {
       const lorem = generateLoremIpsum(Math.ceil(parseInt(paragraphs) / 5), 10);
       const sentences = lorem.split('.').filter(s => s.trim().length > 0);
-      setOutput(sentences.slice(0, parseInt(paragraphs)).map(s => s.trim() + '.').join(' '));
+      updateState({ output: sentences.slice(0, parseInt(paragraphs)).map(s => s.trim() + '.').join(' ') });
     }
   };
 
   const clearAll = () => {
-    setOutput("");
+    updateState({ output: "" });
   };
 
   return (
@@ -42,7 +51,7 @@ export default function LoremIpsum() {
       outputValue={output}
       infoContent={
         <p>
-          Lorem Ipsum is placeholder text commonly used in the printing and typesetting industry. 
+          Lorem Ipsum is placeholder text commonly used in the printing and typesetting industry.
           It's used to demonstrate the visual form of a document or a typeface without relying on meaningful content.
         </p>
       }
@@ -51,7 +60,7 @@ export default function LoremIpsum() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="format">Format</Label>
-            <Select value={format} onValueChange={setFormat}>
+            <Select value={format} onValueChange={(value) => updateState({ format: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -62,11 +71,11 @@ export default function LoremIpsum() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="count">
-                {format === 'paragraphs' ? 'Paragraphs' : 
+                {format === 'paragraphs' ? 'Paragraphs' :
                  format === 'words' ? 'Words' : 'Sentences'}
               </Label>
               <Input
@@ -75,10 +84,10 @@ export default function LoremIpsum() {
                 min="1"
                 max="100"
                 value={paragraphs}
-                onChange={(e) => setParagraphs(e.target.value)}
+                onChange={(e) => updateState({ paragraphs: e.target.value })}
               />
             </div>
-            
+
             {format === 'paragraphs' && (
               <div>
                 <Label htmlFor="words-per-paragraph">Words per Paragraph</Label>
@@ -88,12 +97,12 @@ export default function LoremIpsum() {
                   min="10"
                   max="200"
                   value={wordsPerParagraph}
-                  onChange={(e) => setWordsPerParagraph(e.target.value)}
+                  onChange={(e) => updateState({ wordsPerParagraph: e.target.value })}
                 />
               </div>
             )}
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={generate}>Generate</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>

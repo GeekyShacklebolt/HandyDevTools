@@ -4,15 +4,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Key, AlertTriangle } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function JWTDebugger() {
-  const [jwtInput, setJwtInput] = useState("");
-  const [header, setHeader] = useState("");
-  const [payload, setPayload] = useState("");
-  const [signature, setSignature] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("jwt-debugger", {
+    jwtInput: "",
+    header: "",
+    payload: "",
+    signature: "",
+    error: ""
+  });
 
-  const decodeJWT = () => {
+  const { jwtInput, header, payload, signature, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const decodeJWT = () => {
     try {
       const parts = jwtInput.split('.');
       if (parts.length !== 3) {
@@ -21,35 +30,44 @@ export default function JWTDebugger() {
 
       // Decode header
       const headerDecoded = JSON.parse(atob(parts[0]));
-      setHeader(JSON.stringify(headerDecoded, null, 2));
+      const headerJson = JSON.stringify(headerDecoded, null, 2);
 
       // Decode payload
       const payloadDecoded = JSON.parse(atob(parts[1]));
-      setPayload(JSON.stringify(payloadDecoded, null, 2));
+      const payloadJson = JSON.stringify(payloadDecoded, null, 2);
 
       // Signature (base64url encoded)
-      setSignature(parts[2]);
-      
-      setError("");
+      const signaturePart = parts[2];
+
+      updateState({
+        header: headerJson,
+        payload: payloadJson,
+        signature: signaturePart,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to decode JWT");
-      setHeader("");
-      setPayload("");
-      setSignature("");
+      updateState({
+        error: err instanceof Error ? err.message : "Failed to decode JWT",
+        header: "",
+        payload: "",
+        signature: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setJwtInput("");
-    setHeader("");
-    setPayload("");
-    setSignature("");
-    setError("");
+    updateState({
+      jwtInput: "",
+      header: "",
+      payload: "",
+      signature: "",
+      error: ""
+    });
   };
 
   const exampleJWT = () => {
     const example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    setJwtInput(example);
+    updateState({ jwtInput: example });
     decodeJWT();
   };
 
@@ -62,7 +80,7 @@ export default function JWTDebugger() {
       infoContent={
         <div>
           <p className="mb-2">
-            JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties. 
+            JSON Web Token (JWT) is a compact, URL-safe means of representing claims to be transferred between two parties.
             The claims in a JWT are encoded as a JSON object that is digitally signed using JSON Web Signature (JWS).
           </p>
           <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-md">
@@ -84,11 +102,11 @@ export default function JWTDebugger() {
               id="jwt-input"
               placeholder="Paste your JWT token here"
               value={jwtInput}
-              onChange={(e) => setJwtInput(e.target.value)}
+              onChange={(e) => updateState({ jwtInput: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={decodeJWT}>Decode JWT</Button>
             <Button variant="outline" onClick={exampleJWT}>Load Example</Button>
@@ -104,21 +122,21 @@ export default function JWTDebugger() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Header</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">
               {header || "No header decoded"}
             </div>
           </div>
-          
+
           <div>
             <Label>Payload</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-32 overflow-y-auto">
               {payload || "No payload decoded"}
             </div>
           </div>
-          
+
           <div>
             <Label>Signature</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 break-all">

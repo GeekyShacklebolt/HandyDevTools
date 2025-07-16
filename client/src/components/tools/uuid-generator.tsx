@@ -6,49 +6,58 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Fingerprint, RefreshCw } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { generateUUID } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function UUIDGenerator() {
-  const [output, setOutput] = useState("");
-  const [count, setCount] = useState("1");
-  const [uuidType, setUuidType] = useState("v4");
-  const [inputUUID, setInputUUID] = useState("");
-  const [uuidInfo, setUuidInfo] = useState("");
+  const [state, setState] = useToolState("uuid-generator", {
+    output: "",
+    count: "1",
+    uuidType: "v4",
+    inputUUID: "",
+    uuidInfo: ""
+  });
 
-  const generateUUIDs = () => {
+  const { output, count, uuidType, inputUUID, uuidInfo } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const generateUUIDs = () => {
     const num = parseInt(count);
     const uuids = [];
-    
+
     for (let i = 0; i < num; i++) {
       uuids.push(generateUUID());
     }
-    
-    setOutput(uuids.join('\n'));
+
+    updateState({ output: uuids.join('\n') });
   };
 
   const analyzeUUID = () => {
     try {
       const uuid = inputUUID.trim();
-      
+
       if (!uuid) {
-        setUuidInfo("Please enter a UUID");
+        updateState({ uuidInfo: "Please enter a UUID" });
         return;
       }
 
       // Basic UUID validation
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-      
+
       if (!uuidRegex.test(uuid)) {
-        setUuidInfo("Invalid UUID format");
+        updateState({ uuidInfo: "Invalid UUID format" });
         return;
       }
 
       // Extract version
       const version = uuid.charAt(14);
-      
+
       let info = `UUID: ${uuid}\n`;
       info += `Version: ${version}\n`;
       info += `Length: ${uuid.length} characters\n`;
-      
+
       switch (version) {
         case '1':
           info += `Type: Time-based UUID\n`;
@@ -68,17 +77,19 @@ export default function UUIDGenerator() {
         default:
           info += `Type: Unknown version\n`;
       }
-      
-      setUuidInfo(info);
+
+      updateState({ uuidInfo: info });
     } catch (error) {
-      setUuidInfo("Error analyzing UUID");
+      updateState({ uuidInfo: "Error analyzing UUID" });
     }
   };
 
   const clearAll = () => {
-    setOutput("");
-    setInputUUID("");
-    setUuidInfo("");
+    updateState({
+      output: "",
+      inputUUID: "",
+      uuidInfo: ""
+    });
   };
 
   return (
@@ -89,7 +100,7 @@ export default function UUIDGenerator() {
       outputValue={output}
       infoContent={
         <p>
-          UUID (Universally Unique Identifier) is a 128-bit number used to uniquely identify information. 
+          UUID (Universally Unique Identifier) is a 128-bit number used to uniquely identify information.
           Version 4 UUIDs are randomly generated and are the most commonly used type.
         </p>
       }
@@ -105,12 +116,12 @@ export default function UUIDGenerator() {
                 min="1"
                 max="100"
                 value={count}
-                onChange={(e) => setCount(e.target.value)}
+                onChange={(e) => updateState({ count: e.target.value })}
               />
             </div>
             <div className="flex-1">
               <Label htmlFor="uuid-type">Type</Label>
-              <Select value={uuidType} onValueChange={setUuidType}>
+              <Select value={uuidType} onValueChange={(value) => updateState({ uuidType: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -120,7 +131,7 @@ export default function UUIDGenerator() {
               </Select>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={generateUUIDs}>
               <RefreshCw className="h-4 w-4 mr-1" />
@@ -128,7 +139,7 @@ export default function UUIDGenerator() {
             </Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
-          
+
           <div className="border-t pt-4">
             <Label htmlFor="uuid-input">Analyze UUID</Label>
             <div className="flex space-x-2 mt-1">
@@ -136,7 +147,7 @@ export default function UUIDGenerator() {
                 id="uuid-input"
                 placeholder="Enter UUID to analyze"
                 value={inputUUID}
-                onChange={(e) => setInputUUID(e.target.value)}
+                onChange={(e) => updateState({ inputUUID: e.target.value })}
               />
               <Button onClick={analyzeUUID}>Analyze</Button>
             </div>
@@ -154,7 +165,7 @@ export default function UUIDGenerator() {
               </div>
             </div>
           )}
-          
+
           {uuidInfo && (
             <div>
               <Label>UUID Analysis</Label>

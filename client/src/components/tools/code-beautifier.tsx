@@ -5,18 +5,27 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Wand2 } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function CodeBeautifier() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState("javascript");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("code-beautifier", {
+    input: "",
+    output: "",
+    language: "javascript",
+    error: ""
+  });
 
-  const beautifyCode = () => {
+  const { input, output, language, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const beautifyCode = () => {
     try {
       // Simple beautification for demo - in a real app you'd use js-beautify or similar
       let beautified = input;
-      
+
       switch (language) {
         case "javascript":
         case "json":
@@ -34,19 +43,23 @@ export default function CodeBeautifier() {
         default:
           beautified = input;
       }
-      
-      setOutput(beautified);
-      setError("");
+
+      updateState({
+        output: beautified,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Beautification failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Beautification failed",
+        output: ""
+      });
     }
   };
 
   const minifyCode = () => {
     try {
       let minified = input;
-      
+
       switch (language) {
         case "javascript":
         case "json":
@@ -62,12 +75,16 @@ export default function CodeBeautifier() {
         default:
           minified = input.replace(/\s+/g, ' ').trim();
       }
-      
-      setOutput(minified);
-      setError("");
+
+      updateState({
+        output: minified,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Minification failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Minification failed",
+        output: ""
+      });
     }
   };
 
@@ -75,19 +92,19 @@ export default function CodeBeautifier() {
     const tab = '  ';
     let result = '';
     let indent = 0;
-    
+
     html.split(/>\s*</).forEach((element, index) => {
       if (element.match(/^\/\w/)) {
         indent--;
       }
-      
+
       result += `${tab.repeat(indent)}<${element}>${index === 0 ? '' : '\n'}`;
-      
+
       if (element.match(/^<?\w[^>]*[^\/]$/) && !element.startsWith('input')) {
         indent++;
       }
     });
-    
+
     return result.substring(1, result.length - 3);
   };
 
@@ -105,9 +122,9 @@ export default function CodeBeautifier() {
     const PADDING = ' '.repeat(2);
     const reg = /(>)(<)(\/*)/g;
     let pad = 0;
-    
+
     xml = xml.replace(reg, '$1\r\n$2$3');
-    
+
     return xml.split('\r\n').map((node) => {
       let indent = 0;
       if (node.match(/.+<\/\w[^>]*>$/)) {
@@ -119,16 +136,18 @@ export default function CodeBeautifier() {
       } else {
         indent = 0;
       }
-      
+
       pad += indent;
       return PADDING.repeat(pad - indent) + node;
     }).join('\n');
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
@@ -139,7 +158,7 @@ export default function CodeBeautifier() {
       css: 'body{margin:0;padding:0;}h1{color:blue;font-size:24px;}',
       xml: '<root><person><name>John</name><age>30</age></person></root>'
     };
-    setInput(examples[language as keyof typeof examples] || examples.javascript);
+    updateState({ input: examples[language as keyof typeof examples] || examples.javascript });
   };
 
   return (
@@ -150,7 +169,7 @@ export default function CodeBeautifier() {
       outputValue={output}
       infoContent={
         <p>
-          Code beautification formats code with proper indentation and spacing for better readability. 
+          Code beautification formats code with proper indentation and spacing for better readability.
           Minification removes unnecessary whitespace and formatting to reduce file size.
         </p>
       }
@@ -159,7 +178,7 @@ export default function CodeBeautifier() {
         <div className="space-y-4">
           <div>
             <Label htmlFor="language">Language</Label>
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language} onValueChange={(value) => updateState({ language: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -172,18 +191,18 @@ export default function CodeBeautifier() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
             <Label htmlFor="code-input">Code</Label>
             <Textarea
               id="code-input"
               placeholder="Enter code to beautify or minify"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={beautifyCode}>Beautify</Button>
             <Button variant="outline" onClick={minifyCode}>Minify</Button>
@@ -200,7 +219,7 @@ export default function CodeBeautifier() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Formatted Code</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

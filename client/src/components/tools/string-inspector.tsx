@@ -5,24 +5,35 @@ import { Label } from "@/components/ui/label";
 import { Search } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { analyzeString } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function StringInspector() {
-  const [input, setInput] = useState("");
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [state, setState] = useToolState("string-inspector", {
+    input: "",
+    analysis: null as any
+  });
 
-  const analyze = () => {
+  const { input, analysis } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const analyze = () => {
     if (!input) {
-      setAnalysis(null);
+      updateState({ analysis: null });
       return;
     }
-    
+
     const result = analyzeString(input);
-    setAnalysis(result);
+    updateState({ analysis: result });
   };
 
   const clearAll = () => {
-    setInput("");
-    setAnalysis(null);
+    updateState({
+      input: "",
+      analysis: null
+    });
   };
 
   const loadExample = () => {
@@ -30,12 +41,12 @@ export default function StringInspector() {
 This is a sample text for analysis.
 It contains multiple lines, words, and characters.
 Let's see what the inspector reveals!`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   const formatAnalysis = () => {
     if (!analysis) return "";
-    
+
     return `Characters: ${analysis.characters}
 Characters (no spaces): ${analysis.charactersNoSpaces}
 Words: ${analysis.words}
@@ -54,7 +65,7 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
       outputValue={formatAnalysis()}
       infoContent={
         <p>
-          String inspector analyzes text to provide detailed statistics including character count, 
+          String inspector analyzes text to provide detailed statistics including character count,
           word count, line count, and character frequency analysis. Useful for content analysis and writing metrics.
         </p>
       }
@@ -68,18 +79,19 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
               placeholder="Enter text to analyze"
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
-                if (e.target.value) {
-                  const result = analyzeString(e.target.value);
-                  setAnalysis(result);
+                const newValue = e.target.value;
+                updateState({ input: newValue });
+                if (newValue) {
+                  const result = analyzeString(newValue);
+                  updateState({ analysis: result });
                 } else {
-                  setAnalysis(null);
+                  updateState({ analysis: null });
                 }
               }}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={analyze}>Analyze</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -110,7 +122,7 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
                   <div className="text-2xl font-bold">{analysis.paragraphs}</div>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label>Detailed Statistics</Label>
@@ -122,7 +134,7 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
                     Most frequent character: "{analysis.mostFrequentChar}"
                   </div>
                 </div>
-                
+
                 <div>
                   <Label>Character Frequency (Top 10)</Label>
                   <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 max-h-32 overflow-y-auto">
@@ -140,7 +152,7 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
               </div>
             </>
           )}
-          
+
           {!analysis && (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               Enter text to see analysis

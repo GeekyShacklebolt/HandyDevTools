@@ -6,21 +6,30 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QrCode, Upload, Download } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function QRCodeTools() {
-  const [text, setText] = useState("");
-  const [qrCodeUrl, setQrCodeUrl] = useState("");
-  const [size, setSize] = useState("200");
-  const [uploadedImage, setUploadedImage] = useState("");
-  const [decodedText, setDecodedText] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("qr-code-tools", {
+    text: "",
+    qrCodeUrl: "",
+    size: "200",
+    uploadedImage: "",
+    decodedText: "",
+    error: ""
+  });
+
+  const { text, qrCodeUrl, size, uploadedImage, decodedText, error } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const generateQRCode = async () => {
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const generateQRCode = async () => {
     try {
       if (!text.trim()) {
-        setError("Please enter text to encode");
+        updateState({ error: "Please enter text to encode" });
         return;
       }
 
@@ -28,7 +37,7 @@ export default function QRCodeTools() {
       // In a real app, you'd use a library like qrcode
       const canvas = canvasRef.current;
       if (!canvas) return;
-      
+
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
@@ -40,7 +49,7 @@ export default function QRCodeTools() {
       ctx.fillStyle = '#000000';
       ctx.fillRect(0, 0, sizeNum, sizeNum);
       ctx.fillStyle = '#FFFFFF';
-      
+
       // Create a simple pattern
       const cellSize = sizeNum / 25;
       for (let i = 0; i < 25; i++) {
@@ -50,7 +59,7 @@ export default function QRCodeTools() {
           }
         }
       }
-      
+
       // Add some positioning squares
       ctx.fillStyle = '#000000';
       // Top-left
@@ -59,41 +68,43 @@ export default function QRCodeTools() {
       ctx.fillRect(cellSize, cellSize, cellSize * 5, cellSize * 5);
       ctx.fillStyle = '#000000';
       ctx.fillRect(cellSize * 2, cellSize * 2, cellSize * 3, cellSize * 3);
-      
+
       const dataUrl = canvas.toDataURL();
-      setQrCodeUrl(dataUrl);
-      setError("");
+      updateState({
+        qrCodeUrl: dataUrl,
+        error: ""
+      });
     } catch (err) {
-      setError("Failed to generate QR code");
+      updateState({ error: "Failed to generate QR code" });
     }
   };
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError("Please select a valid image file");
+      updateState({ error: "Please select a valid image file" });
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setUploadedImage(result);
-      
-      // Simulate QR code reading - in a real app you'd use jsQR or similar
-      setDecodedText("Simulated decoded text from QR code: " + text);
+      updateState({
+        uploadedImage: result,
+        decodedText: "Simulated decoded text from QR code: " + text
+      });
     };
     reader.onerror = () => {
-      setError("Failed to read file");
+      updateState({ error: "Failed to read file" });
     };
     reader.readAsDataURL(file);
   };
 
   const downloadQRCode = () => {
     if (!qrCodeUrl) return;
-    
+
     const link = document.createElement('a');
     link.download = 'qrcode.png';
     link.href = qrCodeUrl;
@@ -101,11 +112,13 @@ export default function QRCodeTools() {
   };
 
   const clearAll = () => {
-    setText("");
-    setQrCodeUrl("");
-    setUploadedImage("");
-    setDecodedText("");
-    setError("");
+    updateState({
+      text: "",
+      qrCodeUrl: "",
+      uploadedImage: "",
+      decodedText: "",
+      error: ""
+    });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -119,7 +132,7 @@ export default function QRCodeTools() {
       outputValue={qrCodeUrl || decodedText}
       infoContent={
         <p>
-          QR (Quick Response) codes are two-dimensional barcodes that can store various types of information. 
+          QR (Quick Response) codes are two-dimensional barcodes that can store various types of information.
           They can be scanned by smartphones and other devices to quickly access the encoded data.
         </p>
       }
@@ -135,15 +148,15 @@ export default function QRCodeTools() {
                 id="qr-text"
                 placeholder="Enter text, URL, or data to encode"
                 value={text}
-                onChange={(e) => setText(e.target.value)}
+                onChange={(e) => updateState({ text: e.target.value })}
                 className="tool-textarea"
               />
             </div>
-            
+
             <div className="flex items-center space-x-4">
               <div>
                 <Label htmlFor="qr-size">Size (px)</Label>
-                <Select value={size} onValueChange={setSize}>
+                <Select value={size} onValueChange={(value) => updateState({ size: value })}>
                   <SelectTrigger className="w-24">
                     <SelectValue />
                   </SelectTrigger>
@@ -158,7 +171,7 @@ export default function QRCodeTools() {
               <Button onClick={generateQRCode}>Generate QR Code</Button>
             </div>
           </div>
-          
+
           <div className="border-t pt-4">
             <h4 className="font-medium mb-4">Read QR Code</h4>
             <div>
@@ -178,7 +191,7 @@ export default function QRCodeTools() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={clearAll}>Clear All</Button>
           </div>
@@ -192,7 +205,7 @@ export default function QRCodeTools() {
               {error}
             </div>
           )}
-          
+
           {qrCodeUrl && (
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -207,7 +220,7 @@ export default function QRCodeTools() {
               </div>
             </div>
           )}
-          
+
           {uploadedImage && (
             <div>
               <Label>Uploaded QR Code</Label>
@@ -216,7 +229,7 @@ export default function QRCodeTools() {
               </div>
             </div>
           )}
-          
+
           {decodedText && (
             <div>
               <Label>Decoded Text</Label>
@@ -225,7 +238,7 @@ export default function QRCodeTools() {
               </div>
             </div>
           )}
-          
+
           <canvas ref={canvasRef} style={{ display: 'none' }} />
         </div>
       </ToolOutput>

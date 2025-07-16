@@ -5,28 +5,39 @@ import { Label } from "@/components/ui/label";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { htmlEncode, htmlDecode } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HTMLEntityEncoder() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+  const [state, setState] = useToolState("html-entity-encoder", {
+    input: "",
+    output: ""
+  });
+
+  const { input, output } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const encode = () => {
     const encoded = htmlEncode(input);
-    setOutput(encoded);
+    updateState({ output: encoded });
   };
 
   const decode = () => {
     const decoded = htmlDecode(input);
-    setOutput(decoded);
+    updateState({ output: decoded });
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
+    updateState({
+      input: "",
+      output: ""
+    });
   };
 
   const loadExample = () => {
-    setInput('<div class="example">Hello & welcome to "HTML" entities!</div>');
+    updateState({ input: '<div class="example">Hello & welcome to "HTML" entities!</div>' });
   };
 
   return (
@@ -37,7 +48,7 @@ export default function HTMLEntityEncoder() {
       outputValue={output}
       infoContent={
         <p>
-          HTML entities are used to display reserved characters in HTML. For example, &lt; represents the less-than sign (&lt;) 
+          HTML entities are used to display reserved characters in HTML. For example, &lt; represents the less-than sign (&lt;)
           and &amp; represents the ampersand (&amp;). This tool converts between regular text and HTML entities.
         </p>
       }
@@ -50,11 +61,11 @@ export default function HTMLEntityEncoder() {
               id="html-input"
               placeholder="Enter text to encode or HTML entities to decode"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={encode}>Encode</Button>
             <Button variant="outline" onClick={decode}>Decode</Button>

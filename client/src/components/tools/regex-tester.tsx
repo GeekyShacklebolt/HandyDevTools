@@ -6,23 +6,32 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function RegexTester() {
-  const [pattern, setPattern] = useState("");
-  const [testString, setTestString] = useState("");
-  const [flags, setFlags] = useState({
-    global: false,
-    ignoreCase: false,
-    multiline: false
+  const [state, setState] = useToolState("regex-tester", {
+    pattern: "",
+    testString: "",
+    flags: {
+      global: false,
+      ignoreCase: false,
+      multiline: false
+    },
+    matches: [] as string[],
+    highlightedText: "",
+    error: ""
   });
-  const [matches, setMatches] = useState<string[]>([]);
-  const [highlightedText, setHighlightedText] = useState("");
-  const [error, setError] = useState("");
 
-  const testRegex = () => {
+  const { pattern, testString, flags, matches, highlightedText, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const testRegex = () => {
     try {
       if (!pattern) {
-        setError("Please enter a regex pattern");
+        updateState({ error: "Please enter a regex pattern" });
         return;
       }
 
@@ -34,7 +43,7 @@ export default function RegexTester() {
       const regex = new RegExp(pattern, flagString);
       const foundMatches = [];
       let match;
-      
+
       if (flags.global) {
         while ((match = regex.exec(testString)) !== null) {
           foundMatches.push(match[0]);
@@ -47,42 +56,47 @@ export default function RegexTester() {
         }
       }
 
-      setMatches(foundMatches);
-      
       // Highlight matches in the text
+      let highlighted = testString;
       if (foundMatches.length > 0) {
-        let highlighted = testString;
         foundMatches.forEach(match => {
           highlighted = highlighted.replace(
             new RegExp(match.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
             `<mark class="regex-match">${match}</mark>`
           );
         });
-        setHighlightedText(highlighted);
-      } else {
-        setHighlightedText(testString);
       }
-      
-      setError("");
+
+      updateState({
+        matches: foundMatches,
+        highlightedText: highlighted,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid regex pattern");
-      setMatches([]);
-      setHighlightedText("");
+      updateState({
+        error: err instanceof Error ? err.message : "Invalid regex pattern",
+        matches: [],
+        highlightedText: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setPattern("");
-    setTestString("");
-    setMatches([]);
-    setHighlightedText("");
-    setError("");
+    updateState({
+      pattern: "",
+      testString: "",
+      matches: [],
+      highlightedText: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
-    setPattern("\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b");
-    setTestString("Contact us at support@example.com or admin@test.org for assistance.");
-    setFlags({ global: true, ignoreCase: true, multiline: false });
+    updateState({
+      pattern: "\\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Z|a-z]{2,}\\b",
+      testString: "Contact us at support@example.com or admin@test.org for assistance.",
+      flags: { global: true, ignoreCase: true, multiline: false }
+    });
   };
 
   return (
@@ -93,7 +107,7 @@ export default function RegexTester() {
       outputValue={matches.join('\n')}
       infoContent={
         <p>
-          Regular expressions are patterns used to match character combinations in strings. 
+          Regular expressions are patterns used to match character combinations in strings.
           This tool allows you to test regex patterns against sample text and see the matches highlighted.
         </p>
       }
@@ -106,11 +120,11 @@ export default function RegexTester() {
               id="pattern"
               placeholder="Enter regex pattern"
               value={pattern}
-              onChange={(e) => setPattern(e.target.value)}
+              onChange={(e) => updateState({ pattern: e.target.value })}
               className="tool-input"
             />
           </div>
-          
+
           <div>
             <Label>Flags</Label>
             <div className="flex space-x-4 mt-2">
@@ -118,7 +132,7 @@ export default function RegexTester() {
                 <Checkbox
                   id="global"
                   checked={flags.global}
-                  onCheckedChange={(checked) => setFlags({...flags, global: !!checked})}
+                  onCheckedChange={(checked) => updateState({ flags: {...flags, global: !!checked} })}
                 />
                 <Label htmlFor="global">Global (g)</Label>
               </div>
@@ -126,7 +140,7 @@ export default function RegexTester() {
                 <Checkbox
                   id="ignoreCase"
                   checked={flags.ignoreCase}
-                  onCheckedChange={(checked) => setFlags({...flags, ignoreCase: !!checked})}
+                  onCheckedChange={(checked) => updateState({ flags: {...flags, ignoreCase: !!checked} })}
                 />
                 <Label htmlFor="ignoreCase">Ignore Case (i)</Label>
               </div>
@@ -134,24 +148,24 @@ export default function RegexTester() {
                 <Checkbox
                   id="multiline"
                   checked={flags.multiline}
-                  onCheckedChange={(checked) => setFlags({...flags, multiline: !!checked})}
+                  onCheckedChange={(checked) => updateState({ flags: {...flags, multiline: !!checked} })}
                 />
                 <Label htmlFor="multiline">Multiline (m)</Label>
               </div>
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="test-string">Test String</Label>
             <Textarea
               id="test-string"
               placeholder="Enter text to test against"
               value={testString}
-              onChange={(e) => setTestString(e.target.value)}
+              onChange={(e) => updateState({ testString: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={testRegex}>Test Regex</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -167,17 +181,17 @@ export default function RegexTester() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Matches ({matches.length})</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 max-h-32 overflow-y-auto">
               {matches.length > 0 ? matches.join('\n') : "No matches found"}
             </div>
           </div>
-          
+
           <div>
             <Label>Highlighted Text</Label>
-            <div 
+            <div
               className="p-3 bg-muted rounded-md text-sm mt-1 whitespace-pre-wrap max-h-64 overflow-y-auto"
               dangerouslySetInnerHTML={{ __html: highlightedText || testString || "No text to highlight" }}
             />

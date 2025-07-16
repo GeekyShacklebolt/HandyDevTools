@@ -6,18 +6,27 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function JSONToCode() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState("typescript");
-  const [className, setClassName] = useState("User");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("json-to-code", {
+    input: "",
+    output: "",
+    language: "typescript",
+    className: "User",
+    error: ""
+  });
+
+  const { input, output, language, className, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convertJSON = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter JSON data");
+        updateState({ error: "Please enter JSON data" });
         return;
       }
 
@@ -47,11 +56,15 @@ export default function JSONToCode() {
           code = generateTypeScriptInterface(jsonData, className);
       }
 
-      setOutput(code);
-      setError("");
+      updateState({
+        output: code,
+        error: ""
+      });
     } catch (err) {
-      setError("Invalid JSON data");
-      setOutput("");
+      updateState({
+        error: "Invalid JSON data",
+        output: ""
+      });
     }
   };
 
@@ -62,12 +75,12 @@ export default function JSONToCode() {
       }
 
       let result = `interface ${interfaceName} {\n`;
-      
+
       Object.entries(obj).forEach(([key, value]) => {
         const type = getTypeScriptType(value);
         result += `  ${key}: ${type};\n`;
       });
-      
+
       result += "}";
       return result;
     };
@@ -90,16 +103,16 @@ export default function JSONToCode() {
 
   const generateJavaScriptClass = (data: any, name: string): string => {
     const properties = Object.keys(data).map(key => `    this.${key} = data.${key};`).join('\n');
-    
+
     return `class ${name} {
   constructor(data) {
 ${properties}
   }
-  
+
   static fromJSON(jsonString) {
     return new ${name}(JSON.parse(jsonString));
   }
-  
+
   toJSON() {
     return JSON.stringify(this);
   }
@@ -108,16 +121,16 @@ ${properties}
 
   const generatePythonClass = (data: any, name: string): string => {
     const properties = Object.keys(data).map(key => `        self.${key} = data.get('${key}')`).join('\n');
-    
+
     return `class ${name}:
     def __init__(self, data):
 ${properties}
-    
+
     @classmethod
     def from_json(cls, json_str):
         import json
         return cls(json.loads(json_str))
-    
+
     def to_json(self):
         import json
         return json.dumps(self.__dict__)`;
@@ -128,7 +141,7 @@ ${properties}
       const type = getJavaType(value);
       return `    private ${type} ${key};`;
     }).join('\n');
-    
+
     const getters = Object.entries(data).map(([key, value]) => {
       const type = getJavaType(value);
       const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -136,7 +149,7 @@ ${properties}
         return ${key};
     }`;
     }).join('\n\n');
-    
+
     const setters = Object.entries(data).map(([key, value]) => {
       const type = getJavaType(value);
       const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
@@ -144,14 +157,14 @@ ${properties}
         this.${key} = ${key};
     }`;
     }).join('\n\n');
-    
+
     return `public class ${name} {
 ${fields}
-    
+
     public ${name}() {}
-    
+
 ${getters}
-    
+
 ${setters}
 }`;
   };
@@ -171,7 +184,7 @@ ${setters}
       const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
       return `    public ${type} ${capitalizedKey} { get; set; }`;
     }).join('\n');
-    
+
     return `public class ${name}
 {
 ${properties}
@@ -193,7 +206,7 @@ ${properties}
       const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
       return `    ${capitalizedKey} ${type} \`json:"${key}"\``;
     }).join('\n');
-    
+
     return `type ${name} struct {
 ${fields}
 }`;
@@ -209,9 +222,11 @@ ${fields}
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
@@ -228,7 +243,7 @@ ${fields}
   },
   "hobbies": ["reading", "swimming", "coding"]
 }`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -239,7 +254,7 @@ ${fields}
       outputValue={output}
       infoContent={
         <p>
-          JSON to code generation creates data structures (classes, interfaces, structs) from JSON data. 
+          JSON to code generation creates data structures (classes, interfaces, structs) from JSON data.
           This is useful for quickly creating typed data models in various programming languages based on API responses or data schemas.
         </p>
       }
@@ -249,7 +264,7 @@ ${fields}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="language">Target Language</Label>
-              <Select value={language} onValueChange={setLanguage}>
+              <Select value={language} onValueChange={(value) => updateState({ language: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -269,22 +284,22 @@ ${fields}
                 id="class-name"
                 placeholder="Enter name"
                 value={className}
-                onChange={(e) => setClassName(e.target.value)}
+                onChange={(e) => updateState({ className: e.target.value })}
               />
             </div>
           </div>
-          
+
           <div>
             <Label htmlFor="json-input">JSON Data</Label>
             <Textarea
               id="json-input"
               placeholder="Enter JSON data to generate code from"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertJSON}>Generate Code</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -300,7 +315,7 @@ ${fields}
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Generated Code ({language})</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

@@ -5,24 +5,35 @@ import { Label } from "@/components/ui/label";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { htmlToJsx } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HTMLJSXConverter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+  const [state, setState] = useToolState("html-jsx-converter", {
+    input: "",
+    output: ""
+  });
 
-  const convert = () => {
+  const { input, output } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const convert = () => {
     if (!input.trim()) {
-      setOutput("");
+      updateState({ output: "" });
       return;
     }
-    
+
     const jsx = htmlToJsx(input);
-    setOutput(jsx);
+    updateState({ output: jsx });
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
+    updateState({
+      input: "",
+      output: ""
+    });
   };
 
   const loadExample = () => {
@@ -36,7 +47,7 @@ export default function HTMLJSXConverter() {
   <p>This is a <span class="highlight">highlighted</span> text.</p>
   <!-- This is a comment -->
 </div>`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -47,8 +58,8 @@ export default function HTMLJSXConverter() {
       outputValue={output}
       infoContent={
         <p>
-          HTML to JSX converter transforms HTML markup into JSX syntax used in React. 
-          It converts HTML attributes to their JSX equivalents (class → className, for → htmlFor, etc.) 
+          HTML to JSX converter transforms HTML markup into JSX syntax used in React.
+          It converts HTML attributes to their JSX equivalents (class → className, for → htmlFor, etc.)
           and handles other React-specific requirements.
         </p>
       }
@@ -62,19 +73,20 @@ export default function HTMLJSXConverter() {
               placeholder="Enter HTML code to convert to JSX"
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
+                const newValue = e.target.value;
+                updateState({ input: newValue });
                 // Auto-convert on typing
-                if (e.target.value.trim()) {
-                  const jsx = htmlToJsx(e.target.value);
-                  setOutput(jsx);
+                if (newValue.trim()) {
+                  const jsx = htmlToJsx(newValue);
+                  updateState({ output: jsx });
                 } else {
-                  setOutput("");
+                  updateState({ output: "" });
                 }
               }}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convert}>Convert to JSX</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -91,7 +103,7 @@ export default function HTMLJSXConverter() {
               {output || "No output"}
             </div>
           </div>
-          
+
           {output && (
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <h4 className="text-blue-900 dark:text-blue-200 font-medium mb-2">Conversion Summary</h4>

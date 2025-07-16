@@ -5,23 +5,31 @@ import { Label } from "@/components/ui/label";
 import { Clock } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { parseCronExpression } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function CronParser() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
-  const [nextRuns, setNextRuns] = useState<string[]>([]);
+  const [state, setState] = useToolState("cron-parser", {
+    input: "",
+    output: "",
+    error: "",
+    nextRuns: [] as string[]
+  });
 
-  const parseCron = () => {
+  const { input, output, error, nextRuns } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const parseCron = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter a cron expression");
+        updateState({ error: "Please enter a cron expression" });
         return;
       }
 
       const description = parseCronExpression(input);
-      setOutput(description);
-      
+
       // Generate next run times (simplified)
       const now = new Date();
       const runs = [];
@@ -29,25 +37,32 @@ export default function CronParser() {
         const nextRun = new Date(now.getTime() + (i * 60 * 60 * 1000)); // Simplified: every hour
         runs.push(nextRun.toLocaleString());
       }
-      setNextRuns(runs);
-      
-      setError("");
+
+      updateState({
+        output: description,
+        nextRuns: runs,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid cron expression");
-      setOutput("");
-      setNextRuns([]);
+      updateState({
+        error: err instanceof Error ? err.message : "Invalid cron expression",
+        output: "",
+        nextRuns: []
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setNextRuns([]);
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      nextRuns: [],
+      error: ""
+    });
   };
 
   const loadExample = (expression: string) => {
-    setInput(expression);
+    updateState({ input: expression });
   };
 
   return (
@@ -76,44 +91,44 @@ export default function CronParser() {
               id="cron-input"
               placeholder="0 12 * * 1-5"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-input"
             />
           </div>
-          
+
           <div>
             <Label>Common Examples</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => loadExample("0 12 * * 1-5")}
                 className="justify-start text-left"
               >
                 <span className="font-mono text-xs">0 12 * * 1-5</span>
                 <span className="ml-2 text-xs text-muted-foreground">Weekdays at noon</span>
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => loadExample("*/15 * * * *")}
                 className="justify-start text-left"
               >
                 <span className="font-mono text-xs">*/15 * * * *</span>
                 <span className="ml-2 text-xs text-muted-foreground">Every 15 minutes</span>
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => loadExample("0 0 1 * *")}
                 className="justify-start text-left"
               >
                 <span className="font-mono text-xs">0 0 1 * *</span>
                 <span className="ml-2 text-xs text-muted-foreground">First day of month</span>
               </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => loadExample("0 2 * * 0")}
                 className="justify-start text-left"
               >
@@ -122,7 +137,7 @@ export default function CronParser() {
               </Button>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={parseCron}>Parse Expression</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
@@ -137,7 +152,7 @@ export default function CronParser() {
               {error}
             </div>
           )}
-          
+
           {output && (
             <div>
               <Label>Human Readable Description</Label>
@@ -146,7 +161,7 @@ export default function CronParser() {
               </div>
             </div>
           )}
-          
+
           {nextRuns.length > 0 && (
             <div>
               <Label>Next 5 Run Times (Estimated)</Label>
@@ -157,7 +172,7 @@ export default function CronParser() {
               </div>
             </div>
           )}
-          
+
           {input && (
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <h4 className="text-blue-900 dark:text-blue-200 font-medium mb-2">Field Breakdown</h4>

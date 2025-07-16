@@ -5,56 +5,75 @@ import { Label } from "@/components/ui/label";
 import { ArrowRightLeft } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { hexToAscii, asciiToHex } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HexAsciiConverter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("hex-ascii-converter", {
+    input: "",
+    output: "",
+    error: ""
+  });
+
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convertToAscii = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter hex data");
+        updateState({ error: "Please enter hex data" });
         return;
       }
 
       const ascii = hexToAscii(input);
-      setOutput(ascii);
-      setError("");
+      updateState({
+        output: ascii,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Hex to ASCII conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Hex to ASCII conversion failed",
+        output: ""
+      });
     }
   };
 
   const convertToHex = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter ASCII text");
+        updateState({ error: "Please enter ASCII text" });
         return;
       }
 
       const hex = asciiToHex(input);
-      setOutput(hex);
-      setError("");
+      updateState({
+        output: hex,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "ASCII to Hex conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "ASCII to Hex conversion failed",
+        output: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadHexExample = () => {
-    setInput("48656C6C6F20576F726C6421");
+    updateState({ input: "48656C6C6F20576F726C6421" });
   };
 
   const loadAsciiExample = () => {
-    setInput("Hello World!");
+    updateState({ input: "Hello World!" });
   };
 
   return (
@@ -65,7 +84,7 @@ export default function HexAsciiConverter() {
       outputValue={output}
       infoContent={
         <p>
-          Hexadecimal (hex) to ASCII conversion is useful for decoding binary data, debugging network protocols, 
+          Hexadecimal (hex) to ASCII conversion is useful for decoding binary data, debugging network protocols,
           and working with low-level programming. Each pair of hex digits represents one ASCII character.
         </p>
       }
@@ -78,11 +97,11 @@ export default function HexAsciiConverter() {
               id="hex-ascii-input"
               placeholder="Enter hex data (e.g., 48656C6C6F) or ASCII text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertToAscii}>Hex → ASCII</Button>
             <Button variant="outline" onClick={convertToHex}>ASCII → Hex</Button>
@@ -100,14 +119,14 @@ export default function HexAsciiConverter() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Converted Data</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">
               {output || "No output"}
             </div>
           </div>
-          
+
           {input && output && (
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <h4 className="text-blue-900 dark:text-blue-200 font-medium mb-2">Conversion Details</h4>

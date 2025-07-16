@@ -5,28 +5,39 @@ import { Label } from "@/components/ui/label";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { escapeBackslashes, unescapeBackslashes } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function BackslashEscape() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+  const [state, setState] = useToolState("backslash-escape", {
+    input: "",
+    output: ""
+  });
+
+  const { input, output } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const escape = () => {
     const escaped = escapeBackslashes(input);
-    setOutput(escaped);
+    updateState({ output: escaped });
   };
 
   const unescape = () => {
     const unescaped = unescapeBackslashes(input);
-    setOutput(unescaped);
+    updateState({ output: unescaped });
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
+    updateState({
+      input: "",
+      output: ""
+    });
   };
 
   const loadExample = () => {
-    setInput('C:\\Users\\John\\Documents\\file.txt');
+    updateState({ input: 'C:\\Users\\John\\Documents\\file.txt' });
   };
 
   return (
@@ -37,7 +48,7 @@ export default function BackslashEscape() {
       outputValue={output}
       infoContent={
         <p>
-          Backslash escaping is used to handle backslashes in strings, particularly useful when dealing with 
+          Backslash escaping is used to handle backslashes in strings, particularly useful when dealing with
           file paths, regular expressions, or JSON strings where backslashes need to be escaped or unescaped.
         </p>
       }
@@ -50,11 +61,11 @@ export default function BackslashEscape() {
               id="backslash-input"
               placeholder="Enter text with backslashes"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={escape}>Escape Backslashes</Button>
             <Button variant="outline" onClick={unescape}>Unescape Backslashes</Button>

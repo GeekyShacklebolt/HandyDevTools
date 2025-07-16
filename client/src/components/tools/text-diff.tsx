@@ -4,23 +4,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { GitCompare } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function TextDiff() {
-  const [text1, setText1] = useState("");
-  const [text2, setText2] = useState("");
-  const [diffOutput, setDiffOutput] = useState("");
+  const [state, setState] = useToolState("text-diff", {
+    text1: "",
+    text2: "",
+    diffOutput: ""
+  });
 
-  const compareTexts = () => {
+  const { text1, text2, diffOutput } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const compareTexts = () => {
     const lines1 = text1.split('\n');
     const lines2 = text2.split('\n');
-    
+
     const maxLines = Math.max(lines1.length, lines2.length);
     const diff = [];
-    
+
     for (let i = 0; i < maxLines; i++) {
       const line1 = lines1[i] || '';
       const line2 = lines2[i] || '';
-      
+
       if (line1 === line2) {
         diff.push(`  ${line1}`);
       } else {
@@ -32,26 +41,30 @@ export default function TextDiff() {
         }
       }
     }
-    
-    setDiffOutput(diff.join('\n'));
+
+    updateState({ diffOutput: diff.join('\n') });
   };
 
   const clearAll = () => {
-    setText1("");
-    setText2("");
-    setDiffOutput("");
+    updateState({
+      text1: "",
+      text2: "",
+      diffOutput: ""
+    });
   };
 
   const loadExample = () => {
-    setText1(`Hello World
+    updateState({
+      text1: `Hello World
 This is line 2
 This is line 3
-Common line`);
-    setText2(`Hello Universe
+Common line`,
+      text2: `Hello Universe
 This is line 2
 This is line 3 modified
 Common line
-New line added`);
+New line added`
+    });
   };
 
   return (
@@ -62,7 +75,7 @@ New line added`);
       outputValue={diffOutput}
       infoContent={
         <p>
-          Text diff shows the differences between two pieces of text. Lines starting with "-" are removed, 
+          Text diff shows the differences between two pieces of text. Lines starting with "-" are removed,
           lines starting with "+" are added, and lines with no prefix are unchanged.
         </p>
       }
@@ -75,22 +88,22 @@ New line added`);
               id="text1"
               placeholder="Enter original text"
               value={text1}
-              onChange={(e) => setText1(e.target.value)}
+              onChange={(e) => updateState({ text1: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div>
             <Label htmlFor="text2">Modified Text</Label>
             <Textarea
               id="text2"
               placeholder="Enter modified text"
               value={text2}
-              onChange={(e) => setText2(e.target.value)}
+              onChange={(e) => updateState({ text2: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={compareTexts}>Compare</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>

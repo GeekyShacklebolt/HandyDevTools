@@ -6,51 +6,60 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowUpDown } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { sortLines, deduplicateLines } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function LineSortDedupe() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [options, setOptions] = useState({
-    sort: true,
-    dedupe: true,
-    ascending: true,
-    caseSensitive: false,
-    removeEmpty: true
+  const [state, setState] = useToolState("line-sort-dedupe", {
+    input: "",
+    output: "",
+    options: {
+      sort: true,
+      dedupe: true,
+      ascending: true,
+      caseSensitive: false,
+      removeEmpty: true
+    }
   });
 
-  const processLines = () => {
+  const { input, output, options } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const processLines = () => {
     if (!input.trim()) {
-      setOutput("");
+      updateState({ output: "" });
       return;
     }
 
     let result = input;
-    
+
     // Remove empty lines if requested
     if (options.removeEmpty) {
       result = result.split('\n').filter(line => line.trim() !== '').join('\n');
     }
-    
+
     // Case handling
     if (!options.caseSensitive) {
       // For case insensitive operations, we need to handle this differently
       const lines = result.split('\n');
       const processedLines = lines.map(line => line.toLowerCase());
-      
+
       if (options.sort) {
         const sortedIndices = processedLines
           .map((line, index) => ({ line, index }))
           .sort((a, b) => options.ascending ? a.line.localeCompare(b.line) : b.line.localeCompare(a.line))
           .map(item => item.index);
-        
+
         result = sortedIndices.map(index => lines[index]).join('\n');
       }
-      
+
       if (options.dedupe) {
         const seen = new Set();
         const uniqueLines = [];
         const resultLines = result.split('\n');
-        
+
         for (const line of resultLines) {
           const lowerLine = line.toLowerCase();
           if (!seen.has(lowerLine)) {
@@ -65,18 +74,20 @@ export default function LineSortDedupe() {
       if (options.sort) {
         result = sortLines(result, options.ascending);
       }
-      
+
       if (options.dedupe) {
         result = deduplicateLines(result);
       }
     }
-    
-    setOutput(result);
+
+    updateState({ output: result });
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
+    updateState({
+      input: "",
+      output: ""
+    });
   };
 
   const loadExample = () => {
@@ -92,15 +103,15 @@ elderberry
 fig
 apple
 grape`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   const getStats = () => {
     if (!input && !output) return null;
-    
+
     const inputLines = input.split('\n').filter(line => line.trim() !== '');
     const outputLines = output.split('\n').filter(line => line.trim() !== '');
-    
+
     return {
       inputLines: inputLines.length,
       outputLines: outputLines.length,
@@ -118,8 +129,8 @@ grape`;
       outputValue={output}
       infoContent={
         <p>
-          Line sorting and deduplication is useful for cleaning up lists, removing duplicates from data files, 
-          and organizing text data. You can combine sorting and deduplication with various options for case sensitivity 
+          Line sorting and deduplication is useful for cleaning up lists, removing duplicates from data files,
+          and organizing text data. You can combine sorting and deduplication with various options for case sensitivity
           and empty line handling.
         </p>
       }
@@ -132,11 +143,11 @@ grape`;
               id="lines-input"
               placeholder="Enter lines of text to sort and/or deduplicate"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div>
             <Label>Processing Options</Label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
@@ -144,7 +155,7 @@ grape`;
                 <Checkbox
                   id="sort"
                   checked={options.sort}
-                  onCheckedChange={(checked) => setOptions({...options, sort: !!checked})}
+                  onCheckedChange={(checked) => updateState({ options: {...options, sort: !!checked} })}
                 />
                 <Label htmlFor="sort">Sort lines</Label>
               </div>
@@ -152,7 +163,7 @@ grape`;
                 <Checkbox
                   id="dedupe"
                   checked={options.dedupe}
-                  onCheckedChange={(checked) => setOptions({...options, dedupe: !!checked})}
+                  onCheckedChange={(checked) => updateState({ options: {...options, dedupe: !!checked} })}
                 />
                 <Label htmlFor="dedupe">Remove duplicates</Label>
               </div>
@@ -160,7 +171,7 @@ grape`;
                 <Checkbox
                   id="ascending"
                   checked={options.ascending}
-                  onCheckedChange={(checked) => setOptions({...options, ascending: !!checked})}
+                  onCheckedChange={(checked) => updateState({ options: {...options, ascending: !!checked} })}
                   disabled={!options.sort}
                 />
                 <Label htmlFor="ascending">Ascending order</Label>
@@ -169,7 +180,7 @@ grape`;
                 <Checkbox
                   id="case-sensitive"
                   checked={options.caseSensitive}
-                  onCheckedChange={(checked) => setOptions({...options, caseSensitive: !!checked})}
+                  onCheckedChange={(checked) => updateState({ options: {...options, caseSensitive: !!checked} })}
                 />
                 <Label htmlFor="case-sensitive">Case sensitive</Label>
               </div>
@@ -177,13 +188,13 @@ grape`;
                 <Checkbox
                   id="remove-empty"
                   checked={options.removeEmpty}
-                  onCheckedChange={(checked) => setOptions({...options, removeEmpty: !!checked})}
+                  onCheckedChange={(checked) => updateState({ options: {...options, removeEmpty: !!checked} })}
                 />
                 <Label htmlFor="remove-empty">Remove empty lines</Label>
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={processLines}>Process Lines</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -200,7 +211,7 @@ grape`;
               {output || "No output"}
             </div>
           </div>
-          
+
           {stats && (
             <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
               <h4 className="text-blue-900 dark:text-blue-200 font-medium mb-2">Processing Statistics</h4>

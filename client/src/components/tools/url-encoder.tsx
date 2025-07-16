@@ -5,38 +5,57 @@ import { Label } from "@/components/ui/label";
 import { Link } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { urlEncode, urlDecode } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function URLEncoder() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("url-encoder", {
+    input: "",
+    output: "",
+    error: ""
+  });
+
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const encode = () => {
     try {
       const encoded = urlEncode(input);
-      setOutput(encoded);
-      setError("");
+      updateState({
+        output: encoded,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Encoding failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Encoding failed",
+        output: ""
+      });
     }
   };
 
   const decode = () => {
     try {
       const decoded = urlDecode(input);
-      setOutput(decoded);
-      setError("");
+      updateState({
+        output: decoded,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Decoding failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "Decoding failed",
+        output: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   return (
@@ -47,8 +66,8 @@ export default function URLEncoder() {
       outputValue={output}
       infoContent={
         <p>
-          URL encoding (percent-encoding) is a mechanism to encode information in a Uniform Resource Identifier (URI) 
-          under certain circumstances. It's used to encode special characters in URLs to ensure they are transmitted 
+          URL encoding (percent-encoding) is a mechanism to encode information in a Uniform Resource Identifier (URI)
+          under certain circumstances. It's used to encode special characters in URLs to ensure they are transmitted
           correctly over the internet.
         </p>
       }
@@ -61,11 +80,11 @@ export default function URLEncoder() {
               id="url-input"
               placeholder="Enter URL or text to encode/decode"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={encode}>Encode</Button>
             <Button variant="outline" onClick={decode}>Decode</Button>
@@ -81,7 +100,7 @@ export default function URLEncoder() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Result</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

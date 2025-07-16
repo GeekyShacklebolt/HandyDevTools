@@ -4,16 +4,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function URLParser() {
-  const [input, setInput] = useState("");
-  const [parsedURL, setParsedURL] = useState<any>(null);
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("url-parser", {
+    input: "",
+    parsedURL: null as any,
+    error: ""
+  });
 
-  const parseURL = () => {
+  const { input, parsedURL, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const parseURL = () => {
     try {
       const url = new URL(input);
-      
+
       const parsed = {
         protocol: url.protocol,
         hostname: url.hostname,
@@ -25,24 +34,30 @@ export default function URLParser() {
         host: url.host,
         href: url.href
       };
-      
-      setParsedURL(parsed);
-      setError("");
+
+      updateState({
+        parsedURL: parsed,
+        error: ""
+      });
     } catch (err) {
-      setError("Invalid URL format");
-      setParsedURL(null);
+      updateState({
+        error: "Invalid URL format",
+        parsedURL: null
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setParsedURL(null);
-    setError("");
+    updateState({
+      input: "",
+      parsedURL: null,
+      error: ""
+    });
   };
 
   const exampleURL = () => {
     const example = "https://example.com:8080/path/to/page?param1=value1&param2=value2#section";
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -53,7 +68,7 @@ export default function URLParser() {
       outputValue={parsedURL ? JSON.stringify(parsedURL, null, 2) : ""}
       infoContent={
         <p>
-          URL parsing breaks down a URL into its component parts including protocol, hostname, port, path, 
+          URL parsing breaks down a URL into its component parts including protocol, hostname, port, path,
           query parameters, and fragment identifier. This is useful for debugging and understanding URL structure.
         </p>
       }
@@ -67,10 +82,10 @@ export default function URLParser() {
               type="url"
               placeholder="Enter URL to parse"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={parseURL}>Parse URL</Button>
             <Button variant="outline" onClick={exampleURL}>Load Example</Button>
@@ -86,7 +101,7 @@ export default function URLParser() {
               {error}
             </div>
           )}
-          
+
           {parsedURL && (
             <div className="space-y-3">
               <div>
@@ -95,35 +110,35 @@ export default function URLParser() {
                   {parsedURL.protocol}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Hostname</Label>
                 <div className="p-2 bg-muted rounded font-mono text-sm mt-1">
                   {parsedURL.hostname}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Port</Label>
                 <div className="p-2 bg-muted rounded font-mono text-sm mt-1">
                   {parsedURL.port}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Path</Label>
                 <div className="p-2 bg-muted rounded font-mono text-sm mt-1">
                   {parsedURL.pathname}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Query String</Label>
                 <div className="p-2 bg-muted rounded font-mono text-sm mt-1">
                   {parsedURL.search || "No query string"}
                 </div>
               </div>
-              
+
               <div>
                 <Label>Fragment</Label>
                 <div className="p-2 bg-muted rounded font-mono text-sm mt-1">

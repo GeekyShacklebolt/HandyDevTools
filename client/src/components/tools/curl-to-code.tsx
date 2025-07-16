@@ -5,32 +5,41 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function CurlToCode() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [language, setLanguage] = useState("javascript");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("curl-to-code", {
+    input: "",
+    output: "",
+    language: "javascript",
+    error: ""
+  });
 
-  const convertCurl = () => {
+  const { input, output, language, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const convertCurl = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter a cURL command");
+        updateState({ error: "Please enter a cURL command" });
         return;
       }
 
       const curlCommand = input.trim();
-      
+
       // Parse cURL command (simplified parsing)
       const urlMatch = curlCommand.match(/curl\s+(?:-[A-Za-z]+\s+)?(?:'([^']+)'|"([^"]+)"|([^\s]+))/);
       const url = urlMatch ? (urlMatch[1] || urlMatch[2] || urlMatch[3]) : "";
-      
+
       const methodMatch = curlCommand.match(/-X\s+(\w+)/i);
       const method = methodMatch ? methodMatch[1].toLowerCase() : "get";
-      
+
       const headersMatches = curlCommand.match(/-H\s+(?:'([^']+)'|"([^"]+)")/g) || [];
       const headers: { [key: string]: string } = {};
-      
+
       headersMatches.forEach(match => {
         const headerMatch = match.match(/-H\s+(?:'([^']+)'|"([^"]+)")/);
         if (headerMatch) {
@@ -39,12 +48,12 @@ export default function CurlToCode() {
           headers[key.trim()] = valueParts.join(':').trim();
         }
       });
-      
+
       const dataMatch = curlCommand.match(/-d\s+(?:'([^']+)'|"([^"]+)")/);
       const data = dataMatch ? (dataMatch[1] || dataMatch[2]) : "";
-      
+
       let code = "";
-      
+
       switch (language) {
         case "javascript":
           code = generateJavaScriptCode(url, method, headers, data);
@@ -64,20 +73,24 @@ export default function CurlToCode() {
         default:
           code = generateJavaScriptCode(url, method, headers, data);
       }
-      
-      setOutput(code);
-      setError("");
+
+      updateState({
+        output: code,
+        error: ""
+      });
     } catch (err) {
-      setError("Failed to parse cURL command");
-      setOutput("");
+      updateState({
+        error: "Failed to parse cURL command",
+        output: ""
+      });
     }
   };
 
   const generateJavaScriptCode = (url: string, method: string, headers: any, data: string): string => {
-    const headersStr = Object.keys(headers).length > 0 
-      ? JSON.stringify(headers, null, 2) 
+    const headersStr = Object.keys(headers).length > 0
+      ? JSON.stringify(headers, null, 2)
       : "{}";
-    
+
     return `fetch('${url}', {
   method: '${method.toUpperCase()}',
   headers: ${headersStr},${data ? `
@@ -89,10 +102,10 @@ export default function CurlToCode() {
   };
 
   const generatePythonCode = (url: string, method: string, headers: any, data: string): string => {
-    const headersStr = Object.keys(headers).length > 0 
-      ? JSON.stringify(headers, null, 2) 
+    const headersStr = Object.keys(headers).length > 0
+      ? JSON.stringify(headers, null, 2)
       : "{}";
-    
+
     return `import requests
 
 url = "${url}"
@@ -105,7 +118,7 @@ print(response.json())`;
 
   const generatePHPCode = (url: string, method: string, headers: any, data: string): string => {
     const headersArray = Object.entries(headers).map(([key, value]) => `    "${key}: ${value}"`).join(',\n');
-    
+
     return `<?php
 $curl = curl_init();
 
@@ -127,10 +140,10 @@ echo $response;
   };
 
   const generateGoCode = (url: string, method: string, headers: any, data: string): string => {
-    const headersCode = Object.entries(headers).map(([key, value]) => 
+    const headersCode = Object.entries(headers).map(([key, value]) =>
       `    req.Header.Set("${key}", "${value}")`
     ).join('\n');
-    
+
     return `package main
 
 import (
@@ -142,43 +155,45 @@ import (
 func main() {
     url := "${url}"${data ? `
     data := strings.NewReader(${JSON.stringify(data)})
-    
+
     req, err := http.NewRequest("${method.toUpperCase()}", url, data)` : `
-    
+
     req, err := http.NewRequest("${method.toUpperCase()}", url, nil)`}
     if err != nil {
         panic(err)
     }
 ${headersCode}
-    
+
     client := &http.Client{}
     resp, err := client.Do(req)
     if err != nil {
         panic(err)
     }
     defer resp.Body.Close()
-    
+
     fmt.Println(resp.Status)
 }`;
   };
 
   const generateCurlCode = (url: string, method: string, headers: any, data: string): string => {
-    const headersStr = Object.entries(headers).map(([key, value]) => 
+    const headersStr = Object.entries(headers).map(([key, value]) =>
       `-H "${key}: ${value}"`
     ).join(' ');
-    
+
     return `curl -X ${method.toUpperCase()} "${url}"${headersStr ? ` ${headersStr}` : ''}${data ? ` -d ${JSON.stringify(data)}` : ''}`;
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
     const example = `curl -X POST "https://api.example.com/users" -H "Content-Type: application/json" -H "Authorization: Bearer token123" -d '{"name": "John Doe", "email": "john@example.com"}'`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -189,8 +204,8 @@ ${headersCode}
       outputValue={output}
       infoContent={
         <p>
-          cURL to code conversion helps developers translate cURL commands into various programming languages. 
-          This is useful for integrating API calls into applications or understanding how to make HTTP requests 
+          cURL to code conversion helps developers translate cURL commands into various programming languages.
+          This is useful for integrating API calls into applications or understanding how to make HTTP requests
           programmatically.
         </p>
       }
@@ -199,7 +214,7 @@ ${headersCode}
         <div className="space-y-4">
           <div>
             <Label htmlFor="language">Target Language</Label>
-            <Select value={language} onValueChange={setLanguage}>
+            <Select value={language} onValueChange={(value) => updateState({ language: value })}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
@@ -212,18 +227,18 @@ ${headersCode}
               </SelectContent>
             </Select>
           </div>
-          
+
           <div>
             <Label htmlFor="curl-input">cURL Command</Label>
             <Textarea
               id="curl-input"
               placeholder="Enter cURL command"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertCurl}>Convert to Code</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -239,7 +254,7 @@ ${headersCode}
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Generated Code ({language})</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

@@ -4,24 +4,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Shield, AlertTriangle } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function CertificateDecoder() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("certificate-decoder", {
+    input: "",
+    output: "",
+    error: ""
+  });
 
-  const decodeCertificate = () => {
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const decodeCertificate = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter a certificate");
+        updateState({ error: "Please enter a certificate" });
         return;
       }
 
       // Basic certificate parsing (simplified)
       const certContent = input.trim();
-      
+
       if (!certContent.includes("-----BEGIN CERTIFICATE-----") || !certContent.includes("-----END CERTIFICATE-----")) {
-        setError("Invalid certificate format. Please provide a PEM-encoded certificate.");
+        updateState({ error: "Invalid certificate format. Please provide a PEM-encoded certificate." });
         return;
       }
 
@@ -34,26 +43,30 @@ export default function CertificateDecoder() {
       // For demo purposes, we'll decode basic information
       // In a real implementation, you'd use a proper ASN.1 parser
       const decoded = parseBasicCertificateInfo(base64Content);
-      
-      setOutput(decoded);
-      setError("");
+
+      updateState({
+        output: decoded,
+        error: ""
+      });
     } catch (err) {
-      setError("Failed to decode certificate. Please check the format.");
-      setOutput("");
+      updateState({
+        error: "Failed to decode certificate. Please check the format.",
+        output: ""
+      });
     }
   };
 
   const parseBasicCertificateInfo = (base64Content: string): string => {
     // This is a simplified parser for demonstration
     // In production, you'd use a proper ASN.1/X.509 parser
-    
+
     try {
       const binaryString = atob(base64Content);
       const bytes = new Uint8Array(binaryString.length);
       for (let i = 0; i < binaryString.length; i++) {
         bytes[i] = binaryString.charCodeAt(i);
       }
-      
+
       // Basic certificate structure parsing would go here
       // For demo, we'll return mock parsed data
       return `Certificate Information:
@@ -69,7 +82,7 @@ Public Key Algorithm: RSA
 Public Key Size: 2048 bits
 Key Usage: Digital Signature, Key Encipherment
 Extended Key Usage: Server Authentication
-Subject Alternative Names: 
+Subject Alternative Names:
   - DNS: example.com
   - DNS: www.example.com
 
@@ -88,11 +101,11 @@ Subject Public Key Info:
     RSA Public Key: (2048 bit)
 
 Extensions:
-    X509v3 Subject Alternative Name: 
+    X509v3 Subject Alternative Name:
         DNS:example.com, DNS:www.example.com
     X509v3 Key Usage: critical
         Digital Signature, Key Encipherment
-    X509v3 Extended Key Usage: 
+    X509v3 Extended Key Usage:
         TLS Web Server Authentication
     X509v3 Basic Constraints: critical
         CA:FALSE
@@ -104,9 +117,11 @@ Note: This is a simplified parsing. For production use, implement proper ASN.1 d
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadExample = () => {
@@ -132,7 +147,7 @@ wFTnpKE2rJoQTyMSjOBMBBQJbV8GaKGcpJMpJL0LwGlAo+QmZqoGxD3TnZEqVQv
 YPnGvJGvBnKXBvGHkMjbVJALhOVGSJ7KnrNbGwFKZJBMqwGlOOQyeNmvCrQCXBu
 bJNyKhSj6zHgBFjjBngBcMhZGcHHgQ3YOjQdHNJhRPNJE8oAKHQhNUjLGtQmQbQh
 -----END CERTIFICATE-----`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -144,7 +159,7 @@ bJNyKhSj6zHgBFjjBngBcMhZGcHHgQ3YOjQdHNJhRPNJE8oAKHQhNUjLGtQmQbQh
       infoContent={
         <div>
           <p className="mb-4">
-            X.509 certificates are digital certificates that use the X.509 standard to define their format. 
+            X.509 certificates are digital certificates that use the X.509 standard to define their format.
             They contain information about the certificate holder, issuer, validity period, and cryptographic keys.
           </p>
           <div className="p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-md">
@@ -166,11 +181,11 @@ bJNyKhSj6zHgBFjjBngBcMhZGcHHgQ3YOjQdHNJhRPNJE8oAKHQhNUjLGtQmQbQh
               id="cert-input"
               placeholder="Paste your certificate here (including -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----)"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={decodeCertificate}>Decode Certificate</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -186,7 +201,7 @@ bJNyKhSj6zHgBFjjBngBcMhZGcHHgQ3YOjQdHNJhRPNJE8oAKHQhNUjLGtQmQbQh
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Certificate Information</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

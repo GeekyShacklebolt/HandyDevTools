@@ -6,22 +6,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calculator } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { convertNumberBase } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function NumberBaseConverter() {
-  const [input, setInput] = useState("");
-  const [fromBase, setFromBase] = useState("10");
-  const [output, setOutput] = useState({
-    binary: "",
-    octal: "",
-    decimal: "",
-    hexadecimal: ""
+  const [state, setState] = useToolState("number-base-converter", {
+    input: "",
+    fromBase: "10",
+    output: {
+      binary: "",
+      octal: "",
+      decimal: "",
+      hexadecimal: ""
+    },
+    error: ""
   });
-  const [error, setError] = useState("");
+
+  const { input, fromBase, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convert = () => {
     try {
       if (!input.trim()) {
-        setError("Please enter a number");
+        updateState({ error: "Please enter a number" });
         return;
       }
 
@@ -31,23 +40,31 @@ export default function NumberBaseConverter() {
       const decimal = convertNumberBase(input, baseNum, 10);
       const hexadecimal = convertNumberBase(input, baseNum, 16);
 
-      setOutput({ binary, octal, decimal, hexadecimal });
-      setError("");
+      updateState({
+        output: { binary, octal, decimal, hexadecimal },
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Conversion failed");
-      setOutput({ binary: "", octal: "", decimal: "", hexadecimal: "" });
+      updateState({
+        error: err instanceof Error ? err.message : "Conversion failed",
+        output: { binary: "", octal: "", decimal: "", hexadecimal: "" }
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput({ binary: "", octal: "", decimal: "", hexadecimal: "" });
-    setError("");
+    updateState({
+      input: "",
+      output: { binary: "", octal: "", decimal: "", hexadecimal: "" },
+      error: ""
+    });
   };
 
   const loadExample = () => {
-    setInput("255");
-    setFromBase("10");
+    updateState({
+      input: "255",
+      fromBase: "10"
+    });
   };
 
   return (
@@ -58,7 +75,7 @@ export default function NumberBaseConverter() {
       outputValue={`Binary: ${output.binary}\nOctal: ${output.octal}\nDecimal: ${output.decimal}\nHexadecimal: ${output.hexadecimal}`}
       infoContent={
         <p>
-          Number base conversion allows you to convert numbers between different numeral systems. 
+          Number base conversion allows you to convert numbers between different numeral systems.
           Common bases include binary (base 2), octal (base 8), decimal (base 10), and hexadecimal (base 16).
         </p>
       }
@@ -72,13 +89,13 @@ export default function NumberBaseConverter() {
                 id="number-input"
                 placeholder="Enter number"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => updateState({ input: e.target.value })}
                 className="tool-input"
               />
             </div>
             <div className="w-32">
               <Label htmlFor="from-base">From Base</Label>
-              <Select value={fromBase} onValueChange={setFromBase}>
+              <Select value={fromBase} onValueChange={(value) => updateState({ fromBase: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -91,7 +108,7 @@ export default function NumberBaseConverter() {
               </Select>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convert}>Convert</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -107,7 +124,7 @@ export default function NumberBaseConverter() {
               {error}
             </div>
           )}
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Binary (Base 2)</Label>
@@ -115,21 +132,21 @@ export default function NumberBaseConverter() {
                 {output.binary || "No output"}
               </div>
             </div>
-            
+
             <div>
               <Label>Octal (Base 8)</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
                 {output.octal || "No output"}
               </div>
             </div>
-            
+
             <div>
               <Label>Decimal (Base 10)</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
                 {output.decimal || "No output"}
               </div>
             </div>
-            
+
             <div>
               <Label>Hexadecimal (Base 16)</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">

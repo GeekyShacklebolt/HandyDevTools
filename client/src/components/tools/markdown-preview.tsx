@@ -4,10 +4,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { FileText, Eye, EyeOff } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function MarkdownPreview() {
-  const [input, setInput] = useState("");
-  const [showPreview, setShowPreview] = useState(true);
+  const [state, setState] = useToolState("markdown-preview", {
+    input: "",
+    showPreview: true
+  });
+
+  const { input, showPreview } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convertMarkdownToHTML = (markdown: string): string => {
     return markdown
@@ -42,7 +51,7 @@ export default function MarkdownPreview() {
   };
 
   const clearAll = () => {
-    setInput("");
+    updateState({ input: "" });
   };
 
   const loadExample = () => {
@@ -76,7 +85,7 @@ function hello() {
 ---
 
 That's all folks!`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   const htmlOutput = convertMarkdownToHTML(input);
@@ -89,7 +98,7 @@ That's all folks!`;
       outputValue={input}
       infoContent={
         <p>
-          Markdown is a lightweight markup language that allows you to add formatting elements to plain text. 
+          Markdown is a lightweight markup language that allows you to add formatting elements to plain text.
           This tool provides a live preview of how your Markdown will render as HTML.
         </p>
       }
@@ -102,15 +111,15 @@ That's all folks!`;
               id="markdown-input"
               placeholder="Enter Markdown content"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowPreview(!showPreview)}
+                        <Button
+              variant="outline"
+              onClick={() => updateState({ showPreview: !showPreview })}
             >
               {showPreview ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
               {showPreview ? 'Hide Preview' : 'Show Preview'}
@@ -126,7 +135,7 @@ That's all folks!`;
           {showPreview && input ? (
             <div>
               <Label>Rendered Preview</Label>
-              <div 
+              <div
                 className="p-4 bg-muted rounded-md mt-1 prose prose-sm max-w-none dark:prose-invert max-h-96 overflow-y-auto"
                 dangerouslySetInnerHTML={{ __html: htmlOutput }}
                 style={{
@@ -143,7 +152,7 @@ That's all folks!`;
               Preview is hidden. Click "Show Preview" to see the rendered output.
             </div>
           )}
-          
+
           {input && (
             <div>
               <Label>Raw HTML Output</Label>

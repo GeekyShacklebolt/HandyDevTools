@@ -4,22 +4,33 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Eye, AlertTriangle } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HTMLPreview() {
-  const [input, setInput] = useState("");
-  const [showPreview, setShowPreview] = useState(false);
+  const [state, setState] = useToolState("html-preview", {
+    input: "",
+    showPreview: false
+  });
+
+  const { input, showPreview } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const preview = () => {
-    setShowPreview(true);
+    updateState({ showPreview: true });
   };
 
   const hidePreview = () => {
-    setShowPreview(false);
+    updateState({ showPreview: false });
   };
 
   const clearAll = () => {
-    setInput("");
-    setShowPreview(false);
+    updateState({
+      input: "",
+      showPreview: false
+    });
   };
 
   const loadExample = () => {
@@ -43,7 +54,7 @@ export default function HTMLPreview() {
     </ul>
 </body>
 </html>`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -55,7 +66,7 @@ export default function HTMLPreview() {
       infoContent={
         <div>
           <p className="mb-2">
-            HTML preview allows you to see how your HTML code will render in a browser. 
+            HTML preview allows you to see how your HTML code will render in a browser.
             This is useful for testing and debugging HTML structure and styling.
           </p>
           <div className="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900/20 rounded-md">
@@ -77,11 +88,11 @@ export default function HTMLPreview() {
               id="html-input"
               placeholder="Enter HTML code to preview"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={preview}>Preview</Button>
             <Button variant="outline" onClick={hidePreview}>Hide Preview</Button>
@@ -106,7 +117,7 @@ export default function HTMLPreview() {
               </div>
             </div>
           )}
-          
+
           {!showPreview && (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               Click "Preview" to see the HTML output

@@ -4,23 +4,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Code } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function PHPSerializer() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("php-serializer", {
+    input: "",
+    output: "",
+    error: ""
+  });
 
-  const serialize = () => {
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const serialize = () => {
     try {
       // Simple serialization - convert JSON to PHP serialized format
       const data = JSON.parse(input);
       const serialized = phpSerialize(data);
-      
-      setOutput(serialized);
-      setError("");
+
+      updateState({
+        output: serialized,
+        error: ""
+      });
     } catch (err) {
-      setError("Invalid JSON input or serialization failed");
-      setOutput("");
+      updateState({
+        error: "Invalid JSON input or serialization failed",
+        output: ""
+      });
     }
   };
 
@@ -28,12 +41,16 @@ export default function PHPSerializer() {
     try {
       const unserialized = phpUnserialize(input);
       const json = JSON.stringify(unserialized, null, 2);
-      
-      setOutput(json);
-      setError("");
+
+      updateState({
+        output: json,
+        error: ""
+      });
     } catch (err) {
-      setError("Invalid PHP serialized data or unserialization failed");
-      setOutput("");
+      updateState({
+        error: "Invalid PHP serialized data or unserialization failed",
+        output: ""
+      });
     }
   };
 
@@ -71,33 +88,33 @@ export default function PHPSerializer() {
 
   const phpUnserialize = (str: string): any => {
     let index = 0;
-    
+
     const parseValue = (): any => {
       const type = str[index];
       index += 2; // Skip type and ':'
-      
+
       switch (type) {
         case 'N':
           index++; // Skip ';'
           return null;
-          
+
         case 'b':
           const boolValue = str[index] === '1';
           index += 2; // Skip value and ';'
           return boolValue;
-          
+
         case 'i':
           const intEnd = str.indexOf(';', index);
           const intValue = parseInt(str.substring(index, intEnd));
           index = intEnd + 1;
           return intValue;
-          
+
         case 'd':
           const doubleEnd = str.indexOf(';', index);
           const doubleValue = parseFloat(str.substring(index, doubleEnd));
           index = doubleEnd + 1;
           return doubleValue;
-          
+
         case 's':
           const lengthEnd = str.indexOf(':', index);
           const length = parseInt(str.substring(index, lengthEnd));
@@ -105,12 +122,12 @@ export default function PHPSerializer() {
           const stringValue = str.substring(index, index + length);
           index += length + 2; // Skip string and '";'
           return stringValue;
-          
+
         case 'a':
           const arrayLengthEnd = str.indexOf(':', index);
           const arrayLength = parseInt(str.substring(index, arrayLengthEnd));
           index = arrayLengthEnd + 2; // Skip ':' and '{'
-          
+
           const result: any = {};
           for (let i = 0; i < arrayLength; i++) {
             const key = parseValue();
@@ -118,28 +135,30 @@ export default function PHPSerializer() {
             result[key] = value;
           }
           index++; // Skip '}'
-          
+
           // Convert to array if all keys are sequential integers starting from 0
           const keys = Object.keys(result);
           const isArray = keys.every((key, i) => key === i.toString());
           if (isArray) {
             return keys.map(key => result[key]);
           }
-          
+
           return result;
-          
+
         default:
           throw new Error(`Unknown type: ${type}`);
       }
     };
-    
+
     return parseValue();
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadJsonExample = () => {
@@ -153,12 +172,12 @@ export default function PHPSerializer() {
     "city": "Anytown"
   }
 }`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   const loadSerializedExample = () => {
     const example = 'a:4:{s:4:"name";s:8:"John Doe";s:3:"age";i:30;s:6:"active";b:1;s:6:"scores";a:3:{i:0;i:85;i:1;i:92;i:2;i:78;}}';
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -169,7 +188,7 @@ export default function PHPSerializer() {
       outputValue={output}
       infoContent={
         <p>
-          PHP serialization converts data structures into a string format that can be stored or transmitted 
+          PHP serialization converts data structures into a string format that can be stored or transmitted
           and later reconstructed. This is useful for caching, session storage, and data persistence in PHP applications.
         </p>
       }
@@ -182,11 +201,11 @@ export default function PHPSerializer() {
               id="php-serializer-input"
               placeholder="Enter JSON data to serialize or PHP serialized string to unserialize"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={serialize}>Serialize (JSON → PHP)</Button>
             <Button variant="outline" onClick={unserialize}>Unserialize (PHP → JSON)</Button>
@@ -204,7 +223,7 @@ export default function PHPSerializer() {
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Result</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

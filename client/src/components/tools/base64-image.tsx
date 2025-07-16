@@ -5,65 +5,78 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Image, Upload, Download } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function Base64Image() {
-  const [base64Output, setBase64Output] = useState("");
-  const [imagePreview, setImagePreview] = useState("");
-  const [base64Input, setBase64Input] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("base64-image", {
+    base64Output: "",
+    imagePreview: "",
+    base64Input: "",
+    error: ""
+  });
+
+  const { base64Output, imagePreview, base64Input, error } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError("Please select a valid image file");
+      updateState({ error: "Please select a valid image file" });
       return;
     }
 
     const reader = new FileReader();
     reader.onload = (e) => {
       const result = e.target?.result as string;
-      setBase64Output(result);
-      setImagePreview(result);
-      setError("");
+      updateState({
+        base64Output: result,
+        imagePreview: result,
+        error: ""
+      });
     };
     reader.onerror = () => {
-      setError("Failed to read file");
+      updateState({ error: "Failed to read file" });
     };
     reader.readAsDataURL(file);
   };
 
-  const convertBase64ToImage = () => {
+    const convertBase64ToImage = () => {
     try {
       if (!base64Input) {
-        setError("Please enter a Base64 string");
+        updateState({ error: "Please enter a Base64 string" });
         return;
       }
 
       // Check if it's a valid Base64 image
       const isDataURL = base64Input.startsWith('data:image/');
       const imageData = isDataURL ? base64Input : `data:image/png;base64,${base64Input}`;
-      
+
       // Test if it's a valid image by creating an image element
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
-        setImagePreview(imageData);
-        setError("");
+        updateState({
+          imagePreview: imageData,
+          error: ""
+        });
       };
       img.onerror = () => {
-        setError("Invalid Base64 image data");
+        updateState({ error: "Invalid Base64 image data" });
       };
       img.src = imageData;
     } catch (err) {
-      setError("Invalid Base64 string");
+      updateState({ error: "Invalid Base64 string" });
     }
   };
 
   const downloadImage = () => {
     if (!imagePreview) return;
-    
+
     const link = document.createElement('a');
     link.download = 'decoded-image.png';
     link.href = imagePreview;
@@ -71,10 +84,12 @@ export default function Base64Image() {
   };
 
   const clearAll = () => {
-    setBase64Output("");
-    setImagePreview("");
-    setBase64Input("");
-    setError("");
+    updateState({
+      base64Output: "",
+      imagePreview: "",
+      base64Input: "",
+      error: ""
+    });
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -88,7 +103,7 @@ export default function Base64Image() {
       outputValue={base64Output}
       infoContent={
         <p>
-          Base64 image encoding is used to embed images directly in HTML, CSS, or JSON data. 
+          Base64 image encoding is used to embed images directly in HTML, CSS, or JSON data.
           This is useful for reducing HTTP requests or embedding images in data URLs.
         </p>
       }
@@ -111,20 +126,20 @@ export default function Base64Image() {
               </Button>
             </div>
           </div>
-          
+
           <div className="text-center text-gray-500 dark:text-gray-400">or</div>
-          
+
           <div>
             <Label htmlFor="base64-input">Base64 String</Label>
             <Textarea
               id="base64-input"
               placeholder="Enter Base64 image string to decode"
               value={base64Input}
-              onChange={(e) => setBase64Input(e.target.value)}
+              onChange={(e) => updateState({ base64Input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertBase64ToImage}>Decode to Image</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
@@ -139,7 +154,7 @@ export default function Base64Image() {
               {error}
             </div>
           )}
-          
+
           {imagePreview && (
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -158,7 +173,7 @@ export default function Base64Image() {
               </div>
             </div>
           )}
-          
+
           {base64Output && (
             <div>
               <Label>Base64 String</Label>

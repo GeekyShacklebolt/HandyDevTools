@@ -4,14 +4,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Database } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function SQLFormatter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
+  const [state, setState] = useToolState("sql-formatter", {
+    input: "",
+    output: ""
+  });
+
+  const { input, output } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const formatSQL = () => {
     if (!input.trim()) {
-      setOutput("");
+      updateState({ output: "" });
       return;
     }
 
@@ -33,12 +42,12 @@ export default function SQLFormatter() {
       .replace(/\s+\)/g, ')')
       .trim();
 
-    setOutput(formatted);
+    updateState({ output: formatted });
   };
 
   const minifySQL = () => {
     if (!input.trim()) {
-      setOutput("");
+      updateState({ output: "" });
       return;
     }
 
@@ -49,17 +58,19 @@ export default function SQLFormatter() {
       .replace(/,\s+/g, ',')
       .trim();
 
-    setOutput(minified);
+    updateState({ output: minified });
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
+    updateState({
+      input: "",
+      output: ""
+    });
   };
 
   const loadExample = () => {
     const example = `select u.id,u.name,u.email,p.title,p.content,p.created_at from users u inner join posts p on u.id=p.user_id where u.active=1 and p.published=1 order by p.created_at desc`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -70,7 +81,7 @@ export default function SQLFormatter() {
       outputValue={output}
       infoContent={
         <p>
-          SQL formatting improves query readability by adding proper indentation, line breaks, and spacing. 
+          SQL formatting improves query readability by adding proper indentation, line breaks, and spacing.
           It helps with debugging and maintaining complex SQL queries by making the structure more apparent.
         </p>
       }
@@ -83,11 +94,11 @@ export default function SQLFormatter() {
               id="sql-input"
               placeholder="Enter SQL query to format"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={formatSQL}>Format SQL</Button>
             <Button variant="outline" onClick={minifySQL}>Minify SQL</Button>

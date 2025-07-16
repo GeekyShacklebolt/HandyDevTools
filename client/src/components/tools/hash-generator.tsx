@@ -6,25 +6,34 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Lock } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { generateHash } from "@/lib/utils/converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HashGenerator() {
-  const [input, setInput] = useState("");
-  const [hashes, setHashes] = useState({
-    md5: "",
-    sha1: "",
-    sha256: "",
-    sha512: ""
+  const [state, setState] = useToolState("hash-generator", {
+    input: "",
+    hashes: {
+      md5: "",
+      sha1: "",
+      sha256: "",
+      sha512: ""
+    },
+    selectedAlgorithms: {
+      md5: true,
+      sha1: true,
+      sha256: true,
+      sha512: true
+    }
   });
-  const [selectedAlgorithms, setSelectedAlgorithms] = useState({
-    md5: true,
-    sha1: true,
-    sha256: true,
-    sha512: true
-  });
+
+  const { input, hashes, selectedAlgorithms } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const generateHashes = () => {
     if (!input.trim()) {
-      setHashes({ md5: "", sha1: "", sha256: "", sha512: "" });
+      updateState({ hashes: { md5: "", sha1: "", sha256: "", sha512: "" } });
       return;
     }
 
@@ -35,16 +44,18 @@ export default function HashGenerator() {
       sha512: selectedAlgorithms.sha512 ? generateHash(input, 'sha512') : ""
     };
 
-    setHashes(results);
+    updateState({ hashes: results });
   };
 
   const clearAll = () => {
-    setInput("");
-    setHashes({ md5: "", sha1: "", sha256: "", sha512: "" });
+    updateState({
+      input: "",
+      hashes: { md5: "", sha1: "", sha256: "", sha512: "" }
+    });
   };
 
   const loadExample = () => {
-    setInput("Hello, World!");
+    updateState({ input: "Hello, World!" });
   };
 
   const formatOutput = () => {
@@ -64,7 +75,7 @@ export default function HashGenerator() {
       outputValue={formatOutput()}
       infoContent={
         <p>
-          Hash functions create a fixed-size string from input data. They're used for data integrity verification, 
+          Hash functions create a fixed-size string from input data. They're used for data integrity verification,
           password storage, and digital signatures. Different algorithms provide different levels of security and performance.
         </p>
       }
@@ -78,14 +89,15 @@ export default function HashGenerator() {
               placeholder="Enter text to generate hashes"
               value={input}
               onChange={(e) => {
-                setInput(e.target.value);
+                const newValue = e.target.value;
+                updateState({ input: newValue });
                 // Auto-generate on typing
                 setTimeout(() => generateHashes(), 100);
               }}
               className="tool-textarea"
             />
           </div>
-          
+
           <div>
             <Label>Hash Algorithms</Label>
             <div className="flex flex-wrap gap-4 mt-2">
@@ -94,7 +106,7 @@ export default function HashGenerator() {
                   id="md5"
                   checked={selectedAlgorithms.md5}
                   onCheckedChange={(checked) => {
-                    setSelectedAlgorithms({...selectedAlgorithms, md5: !!checked});
+                    updateState({ selectedAlgorithms: {...selectedAlgorithms, md5: !!checked} });
                     setTimeout(() => generateHashes(), 100);
                   }}
                 />
@@ -105,7 +117,7 @@ export default function HashGenerator() {
                   id="sha1"
                   checked={selectedAlgorithms.sha1}
                   onCheckedChange={(checked) => {
-                    setSelectedAlgorithms({...selectedAlgorithms, sha1: !!checked});
+                    updateState({ selectedAlgorithms: {...selectedAlgorithms, sha1: !!checked} });
                     setTimeout(() => generateHashes(), 100);
                   }}
                 />
@@ -116,7 +128,7 @@ export default function HashGenerator() {
                   id="sha256"
                   checked={selectedAlgorithms.sha256}
                   onCheckedChange={(checked) => {
-                    setSelectedAlgorithms({...selectedAlgorithms, sha256: !!checked});
+                    updateState({ selectedAlgorithms: {...selectedAlgorithms, sha256: !!checked} });
                     setTimeout(() => generateHashes(), 100);
                   }}
                 />
@@ -127,7 +139,7 @@ export default function HashGenerator() {
                   id="sha512"
                   checked={selectedAlgorithms.sha512}
                   onCheckedChange={(checked) => {
-                    setSelectedAlgorithms({...selectedAlgorithms, sha512: !!checked});
+                    updateState({ selectedAlgorithms: {...selectedAlgorithms, sha512: !!checked} });
                     setTimeout(() => generateHashes(), 100);
                   }}
                 />
@@ -135,7 +147,7 @@ export default function HashGenerator() {
               </div>
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={generateHashes}>Generate Hashes</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
@@ -154,7 +166,7 @@ export default function HashGenerator() {
               </div>
             </div>
           )}
-          
+
           {hashes.sha1 && (
             <div>
               <Label>SHA-1</Label>
@@ -163,7 +175,7 @@ export default function HashGenerator() {
               </div>
             </div>
           )}
-          
+
           {hashes.sha256 && (
             <div>
               <Label>SHA-256</Label>
@@ -172,7 +184,7 @@ export default function HashGenerator() {
               </div>
             </div>
           )}
-          
+
           {hashes.sha512 && (
             <div>
               <Label>SHA-512</Label>
@@ -181,7 +193,7 @@ export default function HashGenerator() {
               </div>
             </div>
           )}
-          
+
           {!formatOutput() && (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
               Enter text to generate hashes

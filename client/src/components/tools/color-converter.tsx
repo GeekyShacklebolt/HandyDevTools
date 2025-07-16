@@ -5,33 +5,44 @@ import { Label } from "@/components/ui/label";
 import { Palette } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { hexToRgb, rgbToHex, rgbToHsl, hslToRgb } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function ColorConverter() {
-  const [hexInput, setHexInput] = useState("#3B82F6");
-  const [rgbInput, setRgbInput] = useState({ r: 59, g: 130, b: 246 });
-  const [hslInput, setHslInput] = useState({ h: 217, s: 91, l: 60 });
-  const [output, setOutput] = useState({
-    hex: "#3B82F6",
-    rgb: "rgb(59, 130, 246)",
-    hsl: "hsl(217, 91%, 60%)"
+  const [state, setState] = useToolState("color-converter", {
+    hexInput: "#3B82F6",
+    rgbInput: { r: 59, g: 130, b: 246 },
+    hslInput: { h: 217, s: 91, l: 60 },
+    output: {
+      hex: "#3B82F6",
+      rgb: "rgb(59, 130, 246)",
+      hsl: "hsl(217, 91%, 60%)"
+    },
+    error: ""
   });
-  const [error, setError] = useState("");
 
-  const convertFromHex = () => {
+  const { hexInput, rgbInput, hslInput, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
+
+    const convertFromHex = () => {
     try {
       const rgb = hexToRgb(hexInput);
       const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-      
-      setRgbInput(rgb);
-      setHslInput(hsl);
-      setOutput({
-        hex: hexInput.toUpperCase(),
-        rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-        hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+
+      updateState({
+        rgbInput: rgb,
+        hslInput: hsl,
+        output: {
+          hex: hexInput.toUpperCase(),
+          rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+          hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+        },
+        error: ""
       });
-      setError("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Invalid hex color");
+      updateState({ error: err instanceof Error ? err.message : "Invalid hex color" });
     }
   };
 
@@ -39,17 +50,19 @@ export default function ColorConverter() {
     try {
       const hex = rgbToHex(rgbInput.r, rgbInput.g, rgbInput.b);
       const hsl = rgbToHsl(rgbInput.r, rgbInput.g, rgbInput.b);
-      
-      setHexInput(hex);
-      setHslInput(hsl);
-      setOutput({
-        hex: hex.toUpperCase(),
-        rgb: `rgb(${rgbInput.r}, ${rgbInput.g}, ${rgbInput.b})`,
-        hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+
+      updateState({
+        hexInput: hex,
+        hslInput: hsl,
+        output: {
+          hex: hex.toUpperCase(),
+          rgb: `rgb(${rgbInput.r}, ${rgbInput.g}, ${rgbInput.b})`,
+          hsl: `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`
+        },
+        error: ""
       });
-      setError("");
     } catch (err) {
-      setError("Invalid RGB values");
+      updateState({ error: "Invalid RGB values" });
     }
   };
 
@@ -57,30 +70,34 @@ export default function ColorConverter() {
     try {
       const rgb = hslToRgb(hslInput.h, hslInput.s, hslInput.l);
       const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
-      
-      setHexInput(hex);
-      setRgbInput(rgb);
-      setOutput({
-        hex: hex.toUpperCase(),
-        rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
-        hsl: `hsl(${hslInput.h}, ${hslInput.s}%, ${hslInput.l}%)`
+
+      updateState({
+        hexInput: hex,
+        rgbInput: rgb,
+        output: {
+          hex: hex.toUpperCase(),
+          rgb: `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`,
+          hsl: `hsl(${hslInput.h}, ${hslInput.s}%, ${hslInput.l}%)`
+        },
+        error: ""
       });
-      setError("");
     } catch (err) {
-      setError("Invalid HSL values");
+      updateState({ error: "Invalid HSL values" });
     }
   };
 
   const clearAll = () => {
-    setHexInput("#000000");
-    setRgbInput({ r: 0, g: 0, b: 0 });
-    setHslInput({ h: 0, s: 0, l: 0 });
-    setOutput({ hex: "#000000", rgb: "rgb(0, 0, 0)", hsl: "hsl(0, 0%, 0%)" });
-    setError("");
+    updateState({
+      hexInput: "#000000",
+      rgbInput: { r: 0, g: 0, b: 0 },
+      hslInput: { h: 0, s: 0, l: 0 },
+      output: { hex: "#000000", rgb: "rgb(0, 0, 0)", hsl: "hsl(0, 0%, 0%)" },
+      error: ""
+    });
   };
 
   const loadPreset = (color: string) => {
-    setHexInput(color);
+    updateState({ hexInput: color });
     convertFromHex();
   };
 
@@ -96,8 +113,8 @@ export default function ColorConverter() {
       outputValue={formatOutput()}
       infoContent={
         <p>
-          Color conversion transforms colors between different formats: HEX (web colors), 
-          RGB (red, green, blue), and HSL (hue, saturation, lightness). Each format has specific use cases 
+          Color conversion transforms colors between different formats: HEX (web colors),
+          RGB (red, green, blue), and HSL (hue, saturation, lightness). Each format has specific use cases
           in web design, graphics, and programming.
         </p>
       }
@@ -113,19 +130,19 @@ export default function ColorConverter() {
                 type="text"
                 placeholder="#3B82F6"
                 value={hexInput}
-                onChange={(e) => setHexInput(e.target.value)}
+                onChange={(e) => updateState({ hexInput: e.target.value })}
                 className="tool-input"
               />
               <Input
                 type="color"
                 value={hexInput}
-                onChange={(e) => setHexInput(e.target.value)}
+                onChange={(e) => updateState({ hexInput: e.target.value })}
                 className="w-12 h-10"
               />
               <Button onClick={convertFromHex}>Convert</Button>
             </div>
           </div>
-          
+
           {/* RGB Input */}
           <div className="space-y-2">
             <Label>RGB Values</Label>
@@ -136,7 +153,7 @@ export default function ColorConverter() {
                 max="255"
                 placeholder="R"
                 value={rgbInput.r}
-                onChange={(e) => setRgbInput({...rgbInput, r: parseInt(e.target.value) || 0})}
+                onChange={(e) => updateState({ rgbInput: {...rgbInput, r: parseInt(e.target.value) || 0} })}
                 className="tool-input"
               />
               <Input
@@ -160,7 +177,7 @@ export default function ColorConverter() {
               <Button onClick={convertFromRgb}>Convert</Button>
             </div>
           </div>
-          
+
           {/* HSL Input */}
           <div className="space-y-2">
             <Label>HSL Values</Label>
@@ -195,7 +212,7 @@ export default function ColorConverter() {
               <Button onClick={convertFromHsl}>Convert</Button>
             </div>
           </div>
-          
+
           {/* Preset Colors */}
           <div>
             <Label>Preset Colors</Label>
@@ -214,7 +231,7 @@ export default function ColorConverter() {
               ))}
             </div>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
@@ -228,16 +245,16 @@ export default function ColorConverter() {
               {error}
             </div>
           )}
-          
+
           {/* Color Preview */}
           <div>
             <Label>Color Preview</Label>
-            <div 
+            <div
               className="w-full h-20 rounded-md border border-gray-200 dark:border-gray-700 mt-1"
               style={{ backgroundColor: output.hex }}
             />
           </div>
-          
+
           {/* Color Values */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -246,14 +263,14 @@ export default function ColorConverter() {
                 {output.hex}
               </div>
             </div>
-            
+
             <div>
               <Label>RGB</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
                 {output.rgb}
               </div>
             </div>
-            
+
             <div>
               <Label>HSL</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">

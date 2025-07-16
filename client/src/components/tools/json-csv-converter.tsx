@@ -5,38 +5,57 @@ import { Label } from "@/components/ui/label";
 import { Table } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { jsonToCsv, csvToJson } from "@/lib/utils/advanced-converters";
+import { useToolState } from "@/hooks/use-tool-state";
 
 export default function JSONCSVConverter() {
-  const [input, setInput] = useState("");
-  const [output, setOutput] = useState("");
-  const [error, setError] = useState("");
+  const [state, setState] = useToolState("json-csv-converter", {
+    input: "",
+    output: "",
+    error: ""
+  });
+
+  const { input, output, error } = state;
+
+  const updateState = (updates: Partial<typeof state>) => {
+    setState({ ...state, ...updates });
+  };
 
   const convertToCSV = () => {
     try {
       const csv = jsonToCsv(input);
-      setOutput(csv);
-      setError("");
+      updateState({
+        output: csv,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "JSON to CSV conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "JSON to CSV conversion failed",
+        output: ""
+      });
     }
   };
 
   const convertToJSON = () => {
     try {
       const json = csvToJson(input);
-      setOutput(json);
-      setError("");
+      updateState({
+        output: json,
+        error: ""
+      });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "CSV to JSON conversion failed");
-      setOutput("");
+      updateState({
+        error: err instanceof Error ? err.message : "CSV to JSON conversion failed",
+        output: ""
+      });
     }
   };
 
   const clearAll = () => {
-    setInput("");
-    setOutput("");
-    setError("");
+    updateState({
+      input: "",
+      output: "",
+      error: ""
+    });
   };
 
   const loadJSONExample = () => {
@@ -60,7 +79,7 @@ export default function JSONCSVConverter() {
     "email": "bob@example.com"
   }
 ]`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   const loadCSVExample = () => {
@@ -68,7 +87,7 @@ export default function JSONCSVConverter() {
 John Doe,30,New York,john@example.com
 Jane Smith,25,Los Angeles,jane@example.com
 Bob Johnson,35,Chicago,bob@example.com`;
-    setInput(example);
+    updateState({ input: example });
   };
 
   return (
@@ -79,7 +98,7 @@ Bob Johnson,35,Chicago,bob@example.com`;
       outputValue={output}
       infoContent={
         <p>
-          JSON to CSV conversion transforms JSON arrays into comma-separated values format. 
+          JSON to CSV conversion transforms JSON arrays into comma-separated values format.
           CSV to JSON converts tabular data into JSON object arrays. Both formats are commonly used for data exchange.
         </p>
       }
@@ -92,11 +111,11 @@ Bob Johnson,35,Chicago,bob@example.com`;
               id="json-csv-input"
               placeholder="Enter JSON array or CSV data"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => updateState({ input: e.target.value })}
               className="tool-textarea"
             />
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             <Button onClick={convertToCSV}>JSON → CSV</Button>
             <Button variant="outline" onClick={convertToJSON}>CSV → JSON</Button>
@@ -114,7 +133,7 @@ Bob Johnson,35,Chicago,bob@example.com`;
               {error}
             </div>
           )}
-          
+
           <div>
             <Label>Converted Data</Label>
             <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 whitespace-pre-wrap max-h-96 overflow-y-auto">

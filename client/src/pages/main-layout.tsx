@@ -222,7 +222,7 @@ export default function MainLayout() {
                     <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                     <Input
                       type="text"
-                      placeholder="Search tools... [⌘K]"
+                      placeholder="Search tools... ⌘ K"
                       value={searchQuery}
                       onChange={(e) => handleSearchChange(e.target.value)}
                       className="pl-10 w-full"
@@ -236,9 +236,10 @@ export default function MainLayout() {
                     variant="ghost"
                     size="icon"
                     onClick={() => setIsSidebarCollapsed(true)}
-                    className="h-10 w-10"
+                    className="h-9 w-9 pl-2 hover:bg-transparent"
                   >
-                    <ChevronsLeft className="h-4 w-4" />
+                    {/* <ChevronsLeft className="h-4 w-4"/> */}
+                    <span className="text-gray-400 hover:text-white transition-colors">⌘ \</span>
                   </Button>
                 </div>
               ) : (

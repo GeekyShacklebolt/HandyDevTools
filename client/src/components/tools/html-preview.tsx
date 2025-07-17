@@ -8,28 +8,64 @@ import { useToolState } from "@/hooks/use-tool-state";
 
 export default function HTMLPreview() {
   const [state, setState] = useToolState("html-preview", {
-    input: "",
-    showPreview: false
+    input: ""
   });
 
-  const { input, showPreview } = state;
+  const { input } = state;
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
   };
 
-  const preview = () => {
-    updateState({ showPreview: true });
-  };
+    // Function to wrap HTML with light theme styling for dark mode visibility
+  const wrapHTMLWithLightTheme = (html: string) => {
+    // Check if the HTML already has a style tag with body styling
+    const hasBodyStyle = /<style[^>]*>[\s\S]*body\s*\{[\s\S]*<\/style>/i.test(html);
 
-  const hidePreview = () => {
-    updateState({ showPreview: false });
+    if (hasBodyStyle) {
+      // If it has body styling, ensure it has light theme colors
+      return html.replace(
+        /<style[^>]*>([\s\S]*?)<\/style>/i,
+        (match, styleContent) => {
+          // Add light theme colors if not already present
+          if (!styleContent.includes('background-color') && !styleContent.includes('background:')) {
+            styleContent += '\n        body { background-color: white; color: #333; }';
+          }
+          return `<style>${styleContent}</style>`;
+        }
+      );
+    } else {
+      // If no style tag, add one with light theme
+      const lightThemeStyle = `
+    <style>
+        body {
+            background-color: white !important;
+            color: #333 !important;
+        }
+        * {
+            color: inherit;
+        }
+    </style>`;
+
+      // Insert the style tag after the opening head tag, or create head if it doesn't exist
+      if (html.includes('<head>')) {
+        return html.replace('<head>', `<head>${lightThemeStyle}`);
+      } else if (html.includes('<html>')) {
+        return html.replace('<html>', `<html><head>${lightThemeStyle}</head>`);
+      } else {
+        // If no HTML structure, wrap it
+        return `<!DOCTYPE html>
+<html>
+<head>${lightThemeStyle}</head>
+<body>${html}</body>
+</html>`;
+      }
+    }
   };
 
   const clearAll = () => {
     updateState({
-      input: "",
-      showPreview: false
+      input: ""
     });
   };
 
@@ -39,7 +75,12 @@ export default function HTMLPreview() {
 <head>
     <title>Example Page</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: white;
+            color: #333;
+        }
         h1 { color: #333; }
         .highlight { background-color: yellow; }
     </style>
@@ -94,8 +135,6 @@ export default function HTMLPreview() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={preview}>Preview</Button>
-            <Button variant="outline" onClick={hidePreview}>Hide Preview</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
@@ -104,23 +143,21 @@ export default function HTMLPreview() {
 
       <ToolOutput title="Output" value={input} canCopy={false}>
         <div className="space-y-4">
-          {showPreview && input && (
+          {input ? (
             <div>
               <Label>HTML Preview</Label>
               <div className="mt-1 border border-gray-200 dark:border-gray-700 rounded-md">
                 <iframe
-                  srcDoc={input}
+                  srcDoc={wrapHTMLWithLightTheme(input)}
                   className="w-full h-96 rounded-md"
                   title="HTML Preview"
                   sandbox="allow-same-origin"
                 />
               </div>
             </div>
-          )}
-
-          {!showPreview && (
+          ) : (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              Click "Preview" to see the HTML output
+              Enter HTML code to see the preview
             </div>
           )}
         </div>

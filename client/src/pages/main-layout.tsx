@@ -171,7 +171,7 @@ export default function MainLayout() {
                       }}
                       className={`h-10 w-10 ${!hasToolStates ? 'opacity-50' : ''}`}
                     >
-                      <Trash2 className={`h-5 w-5 ${hasToolStates ? 'text-white' : 'text-gray-400'}`} />
+                      <Trash2 className={`h-5 w-5 ${hasToolStates ? 'text-blue-600 dark:text-white' : 'text-gray-400'}`} />
                     </Button>
                   </div>
                 </TooltipTrigger>

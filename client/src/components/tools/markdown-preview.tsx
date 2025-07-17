@@ -2,17 +2,16 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { FileText, Eye, EyeOff } from "lucide-react";
+import { FileText } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { useToolState } from "@/hooks/use-tool-state";
 
 export default function MarkdownPreview() {
   const [state, setState] = useToolState("markdown-preview", {
-    input: "",
-    showPreview: true
+    input: ""
   });
 
-  const { input, showPreview } = state;
+  const { input } = state;
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
@@ -117,13 +116,6 @@ That's all folks!`;
           </div>
 
           <div className="flex flex-wrap gap-2">
-                        <Button
-              variant="outline"
-              onClick={() => updateState({ showPreview: !showPreview })}
-            >
-              {showPreview ? <EyeOff className="h-4 w-4 mr-1" /> : <Eye className="h-4 w-4 mr-1" />}
-              {showPreview ? 'Hide Preview' : 'Show Preview'}
-            </Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
@@ -132,7 +124,7 @@ That's all folks!`;
 
       <ToolOutput title="Preview" value={input} canCopy={false}>
         <div className="space-y-4">
-          {showPreview && input ? (
+          {input ? (
             <div>
               <Label>Rendered Preview</Label>
               <div
@@ -143,13 +135,9 @@ That's all folks!`;
                 }}
               />
             </div>
-          ) : showPreview ? (
-            <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              Enter Markdown content to see the preview
-            </div>
           ) : (
             <div className="p-8 text-center text-gray-500 dark:text-gray-400">
-              Preview is hidden. Click "Show Preview" to see the rendered output.
+              Enter Markdown content to see the preview
             </div>
           )}
 

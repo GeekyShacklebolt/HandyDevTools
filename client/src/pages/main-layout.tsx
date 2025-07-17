@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
 import { toolCategories, getToolById } from "@/lib/tools-config";
-import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight, Github } from "lucide-react";
+import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight, Github, MessageCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
 import Tool from "./tool";
@@ -194,15 +194,32 @@ export default function MainLayout() {
                 )}
               </Button>
 
-              {/* Feedback Button */}
+              {/* Feedback Button - Desktop */}
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => window.open('https://github.com/GeekyShacklebolt/handy-dev-tools/issues/new', '_blank')}
-                className="h-9"
+                className="h-9 hidden lg:flex"
               >
                 Give Feedback <Github className="h-4 w-4 ml-1" />
               </Button>
+
+              {/* Feedback Button - Mobile */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => window.open('https://github.com/GeekyShacklebolt/handy-dev-tools/issues/new', '_blank')}
+                    className="h-10 w-10 lg:hidden"
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Give Feedback</p>
+                </TooltipContent>
+              </Tooltip>
 
               {/* Mobile Menu Button */}
               <Button

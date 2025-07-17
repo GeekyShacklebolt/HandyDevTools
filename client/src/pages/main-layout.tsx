@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
 import { toolCategories, getToolById } from "@/lib/tools-config";
-import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight } from "lucide-react";
+import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight, Github } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
 import Tool from "./tool";
@@ -192,6 +192,16 @@ export default function MainLayout() {
                 ) : (
                   <Moon className="h-5 w-5" />
                 )}
+              </Button>
+
+              {/* Feedback Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open('https://github.com/GeekyShacklebolt/handy-dev-tools/issues/new', '_blank')}
+                className="h-9"
+              >
+                Give Feedback <Github className="h-4 w-4 ml-1" />
               </Button>
 
               {/* Mobile Menu Button */}

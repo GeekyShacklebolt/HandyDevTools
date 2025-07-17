@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,8 +28,33 @@ export default function StringCaseConverter() {
     setState({ ...state, ...updates });
   };
 
-  const convertAll = () => {
-    if (!input.trim()) {
+  // Auto-convert when input changes with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (input.trim()) {
+        convertAll(input);
+      } else {
+        updateState({
+          outputs: {
+            camelCase: "",
+            PascalCase: "",
+            snake_case: "",
+            "kebab-case": "",
+            SCREAMING_SNAKE_CASE: "",
+            lowercase: "",
+            UPPERCASE: "",
+            "Title Case": ""
+          }
+        });
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [input]);
+
+  const convertAll = (inputText?: string) => {
+    const textToConvert = inputText ?? input;
+    if (!textToConvert.trim()) {
       updateState({
         outputs: {
           camelCase: "",
@@ -47,16 +72,20 @@ export default function StringCaseConverter() {
 
     updateState({
       outputs: {
-        camelCase: convertStringCase(input, 'camelCase'),
-        PascalCase: convertStringCase(input, 'PascalCase'),
-        snake_case: convertStringCase(input, 'snake_case'),
-        "kebab-case": convertStringCase(input, 'kebab-case'),
-        SCREAMING_SNAKE_CASE: convertStringCase(input, 'SCREAMING_SNAKE_CASE'),
-        lowercase: convertStringCase(input, 'lowercase'),
-        UPPERCASE: convertStringCase(input, 'UPPERCASE'),
-        "Title Case": convertStringCase(input, 'Title Case')
+        camelCase: convertStringCase(textToConvert, 'camelCase'),
+        PascalCase: convertStringCase(textToConvert, 'PascalCase'),
+        snake_case: convertStringCase(textToConvert, 'snake_case'),
+        "kebab-case": convertStringCase(textToConvert, 'kebab-case'),
+        SCREAMING_SNAKE_CASE: convertStringCase(textToConvert, 'SCREAMING_SNAKE_CASE'),
+        lowercase: convertStringCase(textToConvert, 'lowercase'),
+        UPPERCASE: convertStringCase(textToConvert, 'UPPERCASE'),
+        "Title Case": convertStringCase(textToConvert, 'Title Case')
       }
     });
+  };
+
+  const handleConvertAll = () => {
+    convertAll();
   };
 
   const clearAll = () => {
@@ -111,15 +140,13 @@ export default function StringCaseConverter() {
               onChange={(e) => {
                 const newValue = e.target.value;
                 updateState({ input: newValue });
-                // Auto-convert on typing
-                setTimeout(() => convertAll(), 100);
               }}
               className="tool-input"
             />
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={convertAll}>Convert All</Button>
+            <Button onClick={handleConvertAll}>Convert All</Button>
             <Button variant="outline" onClick={loadExample}>Load Example</Button>
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>

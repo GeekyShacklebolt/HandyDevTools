@@ -84,9 +84,43 @@ export default function UnixTimeConverter() {
   };
 
   const getCurrentTime = () => {
-    const now = Math.floor(Date.now() / 1000);
-    updateState({ unixInput: now.toString() });
-    convertFromUnix();
+    const now = new Date();
+    const unixTimestamp = Math.floor(now.getTime() / 1000);
+
+    // Format the date for datetime-local input (YYYY-MM-DDTHH:mm)
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hours = String(now.getHours()).padStart(2, '0');
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const humanDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+    // Update state and immediately convert
+    const newState = {
+      ...state,
+      unixInput: unixTimestamp.toString(),
+      humanInput: humanDate
+    };
+
+    setState(newState);
+
+    // Convert using the new values directly
+    const date = new Date(unixTimestamp * 1000);
+    setState({
+      ...newState,
+      humanOutput: date.toLocaleString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        timeZoneName: 'short'
+      }),
+      unixOutput: unixTimestamp.toString(),
+      isoOutput: date.toISOString()
+    });
   };
 
   const addTime = (seconds: number) => {
@@ -94,8 +128,41 @@ export default function UnixTimeConverter() {
       const current = parseInt(unixInput);
       if (!isNaN(current)) {
         const newTime = current + seconds;
-        updateState({ unixInput: newTime.toString() });
-        convertFromUnix();
+        const newDate = new Date(newTime * 1000);
+
+        // Format the date for datetime-local input (YYYY-MM-DDTHH:mm)
+        const year = newDate.getFullYear();
+        const month = String(newDate.getMonth() + 1).padStart(2, '0');
+        const day = String(newDate.getDate()).padStart(2, '0');
+        const hours = String(newDate.getHours()).padStart(2, '0');
+        const minutes = String(newDate.getMinutes()).padStart(2, '0');
+        const humanDate = `${year}-${month}-${day}T${hours}:${minutes}`;
+
+        // Update state and immediately convert
+        const newState = {
+          ...state,
+          unixInput: newTime.toString(),
+          humanInput: humanDate
+        };
+
+        setState(newState);
+
+        // Convert using the new values directly
+        setState({
+          ...newState,
+          humanOutput: newDate.toLocaleString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            timeZoneName: 'short'
+          }),
+          unixOutput: newTime.toString(),
+          isoOutput: newDate.toISOString()
+        });
       }
     }
   };

@@ -37,10 +37,14 @@ export default function StringInspector() {
   };
 
   const loadExample = () => {
-    const example = `Hello, World!
+    const example = `Hello, World! 🌍
 This is a sample text for analysis.
 It contains multiple lines, words, and characters.
-Let's see what the inspector reveals!`;
+Let's see what the inspector reveals! 🚀
+
+Unicode characters: αβγδε, 你好世界, 🎉🎊🎈
+Special symbols: ©®™€£¥¢§¶†‡
+Emojis: 😀😃😄😁😆😅🤣😂🙂🙃😉😊😇`;
     updateState({ input: example });
   };
 
@@ -51,10 +55,10 @@ Let's see what the inspector reveals!`;
 Characters (no spaces): ${analysis.charactersNoSpaces}
 Words: ${analysis.words}
 Lines: ${analysis.lines}
-Paragraphs: ${analysis.paragraphs}
 Sentences: ${analysis.sentences}
 Average words per sentence: ${analysis.averageWordsPerSentence.toFixed(2)}
-Most frequent character: "${analysis.mostFrequentChar}"`;
+Most frequent character: "${analysis.mostFrequentChar}"
+Byte size: ${analysis.byteSize} bytes`;
   };
 
   return (
@@ -80,12 +84,11 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
               value={input}
               onChange={(e) => {
                 const newValue = e.target.value;
-                updateState({ input: newValue });
                 if (newValue) {
                   const result = analyzeString(newValue);
-                  updateState({ analysis: result });
+                  updateState({ input: newValue, analysis: result });
                 } else {
-                  updateState({ analysis: null });
+                  updateState({ input: newValue, analysis: null });
                 }
               }}
               className="tool-textarea"
@@ -118,36 +121,20 @@ Most frequent character: "${analysis.mostFrequentChar}"`;
                   <div className="text-2xl font-bold">{analysis.lines}</div>
                 </div>
                 <div className="p-3 bg-muted rounded-md">
-                  <div className="text-sm font-medium text-muted-foreground">Paragraphs</div>
-                  <div className="text-2xl font-bold">{analysis.paragraphs}</div>
+                  <div className="text-sm font-medium text-muted-foreground">Byte Size</div>
+                  <div className="text-2xl font-bold">{analysis.byteSize}</div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label>Detailed Statistics</Label>
-                  <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
-                    Characters (with spaces): {analysis.characters}<br/>
-                    Characters (without spaces): {analysis.charactersNoSpaces}<br/>
-                    Sentences: {analysis.sentences}<br/>
-                    Average words per sentence: {analysis.averageWordsPerSentence.toFixed(2)}<br/>
-                    Most frequent character: "{analysis.mostFrequentChar}"
-                  </div>
-                </div>
-
-                <div>
-                  <Label>Character Frequency (Top 10)</Label>
-                  <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1 max-h-32 overflow-y-auto">
-                    {Object.entries(analysis.charFrequency)
-                      .sort(([,a], [,b]) => (b as number) - (a as number))
-                      .slice(0, 10)
-                      .map(([char, count]) => (
-                        <div key={char}>
-                          "{char === ' ' ? 'space' : char === '\n' ? '\\n' : char}": {count as number}
-                        </div>
-                      ))
-                    }
-                  </div>
+              <div>
+                <Label>Detailed Statistics</Label>
+                <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
+                  Characters (with spaces): {analysis.characters}<br/>
+                  Characters (without spaces): {analysis.charactersNoSpaces}<br/>
+                  Sentences: {analysis.sentences}<br/>
+                  Average words per sentence: {analysis.averageWordsPerSentence.toFixed(2)}<br/>
+                  Most frequent character: "{analysis.mostFrequentChar}"<br/>
+                  Byte size (UTF-8): {analysis.byteSize} bytes
                 </div>
               </div>
             </>

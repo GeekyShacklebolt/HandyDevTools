@@ -33,9 +33,28 @@ export default function LoremIpsum() {
       const lorem = generateLoremIpsum(1, parseInt(paragraphs) || 50);
       updateState({ output: lorem.replace(/\.\s*/g, ' ').trim() });
     } else if (format === "sentences") {
-      const lorem = generateLoremIpsum(Math.ceil(parseInt(paragraphs) / 5), 10);
-      const sentences = lorem.split('.').filter(s => s.trim().length > 0);
-      updateState({ output: sentences.slice(0, parseInt(paragraphs)).map(s => s.trim() + '.').join(' ') });
+      const numSentences = parseInt(paragraphs) || 1;
+      const wordsPerSentence = 8; // Average words per sentence
+      const totalWords = numSentences * wordsPerSentence;
+
+      // Generate enough words for all sentences
+      const lorem = generateLoremIpsum(Math.ceil(totalWords / 50), 50);
+      const allWords = lorem.replace(/\./g, '').split(/\s+/).filter(w => w.trim().length > 0);
+
+      const sentences = [];
+      for (let i = 0; i < numSentences; i++) {
+        const startIndex = i * wordsPerSentence;
+        const endIndex = Math.min(startIndex + wordsPerSentence, allWords.length);
+        const sentenceWords = allWords.slice(startIndex, endIndex);
+
+        if (sentenceWords.length > 0) {
+          // Capitalize first word
+          sentenceWords[0] = sentenceWords[0].charAt(0).toUpperCase() + sentenceWords[0].slice(1);
+          sentences.push(sentenceWords.join(' ') + '.');
+        }
+      }
+
+      updateState({ output: sentences.join(' ') });
     }
   };
 

@@ -148,7 +148,7 @@ export default function MainLayout() {
                 className="flex items-center hover:opacity-80 transition-opacity"
               >
                 <h1 className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  <Wrench className="inline mr-2 h-6 w-6" />
+                  <Wrench className="inline mr-2 h-6 w-6 hidden sm:inline" />
                   HandyDevTools
                 </h1>
               </button>

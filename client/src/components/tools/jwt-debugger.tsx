@@ -28,12 +28,23 @@ export default function JWTDebugger() {
         throw new Error("Invalid JWT format");
       }
 
+      // Helper function to decode base64url
+      const base64UrlDecode = (str: string) => {
+        // Convert base64url to base64
+        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        return atob(base64);
+      };
+
       // Decode header
-      const headerDecoded = JSON.parse(atob(parts[0]));
+      const headerDecoded = JSON.parse(base64UrlDecode(parts[0]));
       const headerJson = JSON.stringify(headerDecoded, null, 2);
 
       // Decode payload
-      const payloadDecoded = JSON.parse(atob(parts[1]));
+      const payloadDecoded = JSON.parse(base64UrlDecode(parts[1]));
       const payloadJson = JSON.stringify(payloadDecoded, null, 2);
 
       // Signature (base64url encoded)
@@ -65,10 +76,55 @@ export default function JWTDebugger() {
     });
   };
 
-  const exampleJWT = () => {
-    const example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
-    updateState({ jwtInput: example });
-    decodeJWT();
+    const exampleJWT = () => {
+    const example = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjE1MTYyNDI2MjJ9.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
+
+    // Decode the example JWT directly
+    try {
+      const parts = example.split('.');
+      if (parts.length !== 3) {
+        throw new Error("Invalid JWT format");
+      }
+
+      // Helper function to decode base64url
+      const base64UrlDecode = (str: string) => {
+        // Convert base64url to base64
+        let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+        // Add padding if needed
+        while (base64.length % 4) {
+          base64 += '=';
+        }
+        return atob(base64);
+      };
+
+      // Decode header
+      const headerDecoded = JSON.parse(base64UrlDecode(parts[0]));
+      const headerJson = JSON.stringify(headerDecoded, null, 2);
+
+      // Decode payload
+      const payloadDecoded = JSON.parse(base64UrlDecode(parts[1]));
+      const payloadJson = JSON.stringify(payloadDecoded, null, 2);
+
+      // Signature (base64url encoded)
+      const signaturePart = parts[2];
+
+      // Update all state at once
+      updateState({
+        jwtInput: example,
+        header: headerJson,
+        payload: payloadJson,
+        signature: signaturePart,
+        error: ""
+      });
+    } catch (err) {
+      updateState({
+        jwtInput: example,
+        error: err instanceof Error ? err.message : "Failed to decode JWT",
+        header: "",
+        payload: "",
+        signature: ""
+      });
+    }
   };
 
   return (

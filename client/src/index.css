@@ -91,4 +91,44 @@
   .regex-match {
     @apply bg-yellow-200 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-200;
   }
+
+  /* Custom prose styling for markdown preview */
+  .prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose h1:first-child, .prose h2:first-child, .prose h3:first-child,
+  .prose h4:first-child, .prose h5:first-child, .prose h6:first-child {
+    margin-top: 0;
+  }
+
+  .prose p {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose p:first-child {
+    margin-top: 0;
+  }
+
+  .prose ul, .prose ol {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose blockquote {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose pre {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+  }
+
+  .prose hr {
+    margin-top: 1em;
+    margin-bottom: 1em;
+  }
 }

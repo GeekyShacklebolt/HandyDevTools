@@ -18,35 +18,78 @@ export default function MarkdownPreview() {
   };
 
   const convertMarkdownToHTML = (markdown: string): string => {
-    return markdown
-      // Headers
-      .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-      .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-      .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-      // Bold
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/__(.*?)__/g, '<strong>$1</strong>')
-      // Italic
-      .replace(/\*(.*?)\*/g, '<em>$1</em>')
-      .replace(/_(.*?)_/g, '<em>$1</em>')
-      // Code inline
-      .replace(/`(.*?)`/g, '<code>$1</code>')
-      // Code blocks
-      .replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>')
-      // Links
-      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
-      // Images
-      .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;" />')
-      // Lists
-      .replace(/^\* (.*$)/gim, '<ul><li>$1</li></ul>')
-      .replace(/^\- (.*$)/gim, '<ul><li>$1</li></ul>')
-      .replace(/^\d+\. (.*$)/gim, '<ol><li>$1</li></ol>')
-      // Blockquotes
-      .replace(/^> (.*$)/gim, '<blockquote>$1</blockquote>')
-      // Horizontal rules
-      .replace(/^---$/gim, '<hr>')
-      // Line breaks
-      .replace(/\n/g, '<br>');
+    // Split into lines for better processing
+    const lines = markdown.split('\n');
+    const processedLines: string[] = [];
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      let processedLine = line;
+
+      // Process inline formatting first
+      processedLine = processedLine
+        // Bold
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/__(.*?)__/g, '<strong>$1</strong>')
+        // Italic
+        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+        .replace(/_(.*?)_/g, '<em>$1</em>')
+        // Code inline
+        .replace(/`(.*?)`/g, '<code>$1</code>')
+        // Links
+        .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+        // Images
+        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto;" />');
+
+      // Process block elements
+      if (line.match(/^### (.*$)/)) {
+        processedLine = `<h3>${line.replace(/^### /, '')}</h3>`;
+      } else if (line.match(/^## (.*$)/)) {
+        processedLine = `<h2>${line.replace(/^## /, '')}</h2>`;
+      } else if (line.match(/^# (.*$)/)) {
+        processedLine = `<h1>${line.replace(/^# /, '')}</h1>`;
+      } else if (line.match(/^> (.*$)/)) {
+        processedLine = `<blockquote>${line.replace(/^> /, '')}</blockquote>`;
+      } else if (line.match(/^---$/)) {
+        processedLine = '<hr>';
+      } else if (line.match(/^\* (.*$)/) || line.match(/^\- (.*$)/)) {
+        processedLine = `<li>${line.replace(/^[\*\-] /, '')}</li>`;
+      } else if (line.match(/^\d+\. (.*$)/)) {
+        processedLine = `<li>${line.replace(/^\d+\. /, '')}</li>`;
+      } else if (line.trim() === '') {
+        // Empty lines become paragraph breaks
+        processedLine = '</p><p>';
+      } else {
+        // Regular text lines
+        processedLine = processedLine;
+      }
+
+      processedLines.push(processedLine);
+    }
+
+    // Join lines and handle special cases
+    let result = processedLines.join('\n');
+
+    // Handle code blocks (multi-line)
+    result = result.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+    // Handle lists properly
+    result = result.replace(/(<li>.*<\/li>)/g, (match) => {
+      // Check if it's a numbered list or bullet list
+      const isNumbered = match.includes('<li>') && /^\d+\./.test(match);
+      const listType = isNumbered ? 'ol' : 'ul';
+      return `<${listType}>${match}</${listType}>`;
+    });
+
+    // Wrap in paragraphs and clean up
+    result = result
+      .replace(/^(?!<[hou][1-6lr]|<p>|<blockquote>|<pre>|<hr>)(.+)$/gm, '<p>$1</p>')
+      .replace(/<\/p>\s*<p>/g, '</p><p>')
+      .replace(/<p><\/p>/g, '') // Remove empty paragraphs
+      .replace(/<p>(<[hou][1-6lr]|<blockquote>|<pre>|<hr>)/g, '$1') // Remove p tags around block elements
+      .replace(/(<\/[hou][1-6lr]|<\/blockquote>|<\/pre>|<\/hr>)<\/p>/g, '$1'); // Remove closing p tags around block elements
+
+    return result;
   };
 
   const clearAll = () => {

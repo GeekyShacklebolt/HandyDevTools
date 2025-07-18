@@ -26,7 +26,7 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
               </h1>
             </Link>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             {/* Search Bar */}
             <div className="hidden md:block relative">
@@ -39,7 +39,7 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
                 className="w-64 pl-10"
               />
             </div>
-            
+
             {/* Theme Toggle */}
             <Button
               variant="ghost"
@@ -53,7 +53,7 @@ export default function Header({ onMobileMenuClick, showMobileMenuButton }: Head
                 <Moon className="h-5 w-5" />
               )}
             </Button>
-            
+
             {/* Mobile Menu Button */}
             {showMobileMenuButton && (
               <Button

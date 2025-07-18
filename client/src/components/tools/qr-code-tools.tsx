@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { QrCode, Upload, Download } from "lucide-react";
 import ToolLayout, { ToolInput, ToolOutput } from "@/components/ui/tool-layout";
 import { useToolState } from "@/hooks/use-tool-state";
+import QRCode from "qrcode";
+import jsQR from "jsqr";
 
 export default function QRCodeTools() {
   const [state, setState] = useToolState("qr-code-tools", {
@@ -20,58 +22,30 @@ export default function QRCodeTools() {
 
   const { text, qrCodeUrl, size, uploadedImage, decodedText, error } = state;
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
   };
 
-    const generateQRCode = async () => {
+  const generateQRCode = async () => {
     try {
       if (!text.trim()) {
         updateState({ error: "Please enter text to encode" });
         return;
       }
 
-      // Using a simple QR code generation approach
-      // In a real app, you'd use a library like qrcode
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return;
-
       const sizeNum = parseInt(size);
-      canvas.width = sizeNum;
-      canvas.height = sizeNum;
-
-      // Simple placeholder QR code pattern
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(0, 0, sizeNum, sizeNum);
-      ctx.fillStyle = '#FFFFFF';
-
-      // Create a simple pattern
-      const cellSize = sizeNum / 25;
-      for (let i = 0; i < 25; i++) {
-        for (let j = 0; j < 25; j++) {
-          if ((i + j) % 2 === 0) {
-            ctx.fillRect(i * cellSize, j * cellSize, cellSize, cellSize);
-          }
+      const qrCodeDataUrl = await QRCode.toDataURL(text, {
+        width: sizeNum,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
         }
-      }
+      });
 
-      // Add some positioning squares
-      ctx.fillStyle = '#000000';
-      // Top-left
-      ctx.fillRect(0, 0, cellSize * 7, cellSize * 7);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(cellSize, cellSize, cellSize * 5, cellSize * 5);
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(cellSize * 2, cellSize * 2, cellSize * 3, cellSize * 3);
-
-      const dataUrl = canvas.toDataURL();
       updateState({
-        qrCodeUrl: dataUrl,
+        qrCodeUrl: qrCodeDataUrl,
         error: ""
       });
     } catch (err) {
@@ -79,7 +53,12 @@ export default function QRCodeTools() {
     }
   };
 
-    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const decodeQRCode = (imageData: ImageData): string | null => {
+    const code = jsQR(imageData.data, imageData.width, imageData.height);
+    return code ? code.data : null;
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -89,12 +68,49 @@ export default function QRCodeTools() {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const result = e.target?.result as string;
       updateState({
         uploadedImage: result,
-        decodedText: "Simulated decoded text from QR code: " + text
+        decodedText: "",
+        error: ""
       });
+
+      // Try to decode the QR code
+      try {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            updateState({ error: "Failed to create canvas context" });
+            return;
+          }
+
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const decodedData = decodeQRCode(imageData);
+
+          if (decodedData) {
+            updateState({
+              decodedText: decodedData
+            });
+          } else {
+            updateState({
+              decodedText: "No QR code found in the uploaded image"
+            });
+          }
+        };
+        img.onerror = () => {
+          updateState({ error: "Failed to load image for decoding" });
+        };
+        img.src = result;
+      } catch (err) {
+        updateState({ error: "Failed to decode QR code" });
+      }
     };
     reader.onerror = () => {
       updateState({ error: "Failed to read file" });
@@ -238,8 +254,6 @@ export default function QRCodeTools() {
               </div>
             </div>
           )}
-
-          <canvas ref={canvasRef} style={{ display: 'none' }} />
         </div>
       </ToolOutput>
     </ToolLayout>

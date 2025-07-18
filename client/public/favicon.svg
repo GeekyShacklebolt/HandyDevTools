@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="4" fill="#3b82f6"/>
+  <!-- Zap/lightning bolt icon -->
+  <path d="M16 4l-2 8h6l-8 16 2-8h-6l8-16z" fill="white"/>
+</svg>

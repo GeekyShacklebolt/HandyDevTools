@@ -78,8 +78,11 @@ const toolComponents = {
   LineSortDedupe
 };
 
-export default function Tool() {
-  const { toolId } = useParams<{ toolId: string }>();
+interface ToolProps {
+  toolId: string;
+}
+
+export default function Tool({ toolId }: ToolProps) {
   const tool = getToolById(toolId || "");
 
   if (!tool) {

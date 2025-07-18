@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useParams } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTheme } from "@/lib/theme-context";
@@ -24,8 +24,10 @@ export default function MainLayout() {
   const desktopSearchRef = useRef<HTMLInputElement>(null);
   const mobileSearchRef = useRef<HTMLInputElement>(null);
 
-  // Extract tool ID from URL
+  // Extract tool ID directly from location instead of useParams
   const toolId = location.startsWith('/tool/') ? location.split('/tool/')[1] : null;
+
+  // Get current tool from toolId
   const currentTool = toolId ? getToolById(toolId) : null;
 
   // Filter tools based on search
@@ -393,7 +395,7 @@ export default function MainLayout() {
         {/* Main Content */}
         <div className="flex-1 overflow-hidden">
           {currentTool ? (
-            <Tool key={clearTrigger} />
+            <Tool key={clearTrigger} toolId={toolId!} />
           ) : (
             <div className="h-full flex items-start justify-center bg-gray-50 dark:bg-gray-900 p-8 pt-16">
               <div className="text-center max-w-2xl">

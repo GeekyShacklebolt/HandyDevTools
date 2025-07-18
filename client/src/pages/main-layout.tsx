@@ -7,6 +7,7 @@ import { toolCategories, getToolById } from "@/lib/tools-config";
 import { Search, Moon, Sun, Menu, Wrench, X, Trash2, ChevronsLeft, ChevronsRight, ArrowRight, Github, MessageCircle } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { clearAllToolStates, useHasToolStates } from "@/hooks/use-tool-state";
+import { SEOHead } from "@/components/SEOHead";
 import Tool from "./tool";
 
 export default function MainLayout() {
@@ -137,6 +138,7 @@ export default function MainLayout() {
 
   return (
     <TooltipProvider>
+      <SEOHead toolId={toolId || undefined} />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header */}
       <header className="bg-gray-100 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-600 sticky top-0 z-40">

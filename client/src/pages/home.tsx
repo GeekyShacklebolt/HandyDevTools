@@ -111,7 +111,7 @@ export default function Home() {
             HandyDevTools
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-400 mb-8">
-            40+ Essential Developer Tools - All Client-Side, Fast & Secure
+            30+ Essential Developer Tools - All Client-Side, Fast & Secure
           </p>
 
           {/* Search Bar */}

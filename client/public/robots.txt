@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.shivasaxena.com/handy-dev-tools/sitemap.xml
+
+# Crawl-delay
+Crawl-delay: 1

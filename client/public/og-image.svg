@@ -1,0 +1,61 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient -->
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="cardGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.95" />
+      <stop offset="100%" style="stop-color:#f8fafc;stop-opacity:0.95" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+
+  <!-- Decorative elements -->
+  <circle cx="100" cy="100" r="50" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="1100" cy="530" r="80" fill="rgba(255,255,255,0.1)"/>
+  <circle cx="200" cy="500" r="30" fill="rgba(255,255,255,0.1)"/>
+
+  <!-- Main content card -->
+  <rect x="100" y="100" width="1000" height="430" rx="20" fill="url(#cardGradient)" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+
+
+
+  <!-- Title -->
+  <text x="250" y="200" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#1e293b">
+    HandyDevTools
+  </text>
+
+  <!-- Subtitle -->
+  <text x="250" y="250" font-family="Arial, sans-serif" font-size="24" fill="#64748b">
+    30+ Essential Developer Tools
+  </text>
+
+  <!-- Features list -->
+  <g transform="translate(250, 300)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="18" fill="#475569">• JSON Formatter &amp; Validator</text>
+    <text x="0" y="35" font-family="Arial, sans-serif" font-size="18" fill="#475569">• Base64 Encoder/Decoder</text>
+    <text x="0" y="70" font-family="Arial, sans-serif" font-size="18" fill="#475569">• JWT Debugger</text>
+    <text x="0" y="105" font-family="Arial, sans-serif" font-size="18" fill="#475569">• URL Encoder/Decoder</text>
+  </g>
+
+  <g transform="translate(650, 300)">
+    <text x="0" y="0" font-family="Arial, sans-serif" font-size="18" fill="#475569">• Unix Time Converter</text>
+    <text x="0" y="35" font-family="Arial, sans-serif" font-size="18" fill="#475569">• SQL Formatter</text>
+    <text x="0" y="70" font-family="Arial, sans-serif" font-size="18" fill="#475569">• Regex Tester</text>
+    <text x="0" y="105" font-family="Arial, sans-serif" font-size="18" fill="#475569">• Code Beautifier</text>
+  </g>
+
+  <!-- Call to action -->
+  <text x="250" y="480" font-family="Arial, sans-serif" font-size="20" font-weight="bold" fill="#3b82f6">
+    Free • Fast • Secure • Client-Side
+  </text>
+
+  <!-- URL -->
+  <text x="250" y="510" font-family="Arial, sans-serif" font-size="16" fill="#64748b">
+    www.shivasaxena.com/handy-dev-tools
+  </text>
+</svg>

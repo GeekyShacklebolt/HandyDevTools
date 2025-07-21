@@ -154,7 +154,7 @@
     </div>
 
     <script>
-        // Get the current path and redirect to the main app
+        // Redirect to the main app - let the server handle routing
         (function () {
             var path = window.location.pathname;
             var basePath = '/handy-dev-tools';
@@ -162,13 +162,8 @@
             // Remove the base path from the current path
             var cleanPath = path.replace(basePath, '');
 
-            // If we're at the root or 404, go to the main app
-            if (cleanPath === '' || cleanPath === '/') {
-                window.location.href = basePath + '/';
-            } else {
-                // For tool routes, redirect to the main app with the path
-                window.location.href = basePath + '/#!' + cleanPath;
-            }
+            // Redirect to the main app
+            window.location.href = basePath + cleanPath;
         })();
     </script>
 </body>

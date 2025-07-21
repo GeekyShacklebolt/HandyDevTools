@@ -78,6 +78,19 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
+  // Serve tool pages directly if they exist
+  app.get("/tool/:toolId", (req, res) => {
+    const toolId = req.params.toolId;
+    const toolPath = path.resolve(distPath, "tool", `${toolId}.html`);
+
+    if (fs.existsSync(toolPath)) {
+      res.sendFile(toolPath);
+    } else {
+      // Fall back to index.html for client-side routing
+      res.sendFile(path.resolve(distPath, "index.html"));
+    }
+  });
+
   // fall through to index.html if the file doesn't exist
   app.use("*", (_req, res) => {
     res.sendFile(path.resolve(distPath, "index.html"));

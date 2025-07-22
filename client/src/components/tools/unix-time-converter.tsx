@@ -10,12 +10,13 @@ export default function UnixTimeConverter() {
   const [state, setState] = useToolState("unix-time-converter", {
     unixInput: "",
     humanInput: "",
+    isoInput: "",
     humanOutput: "",
     unixOutput: "",
     isoOutput: ""
   });
 
-  const { unixInput, humanInput, humanOutput, unixOutput, isoOutput } = state;
+  const { unixInput, humanInput, isoInput, humanOutput, unixOutput, isoOutput } = state;
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
@@ -30,7 +31,7 @@ export default function UnixTimeConverter() {
 
       const date = new Date(timestamp * 1000);
       updateState({
-        humanOutput: date.toLocaleString('en-US', {
+        humanOutput: date.toLocaleString(undefined, {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -62,7 +63,7 @@ export default function UnixTimeConverter() {
       const timestamp = Math.floor(date.getTime() / 1000);
       updateState({
         unixOutput: timestamp.toString(),
-        humanOutput: date.toLocaleString('en-US', {
+        humanOutput: date.toLocaleString(undefined, {
           weekday: 'long',
           year: 'numeric',
           month: 'long',
@@ -77,6 +78,53 @@ export default function UnixTimeConverter() {
     } catch (error) {
       updateState({
         unixOutput: "Invalid date",
+        humanOutput: "",
+        isoOutput: ""
+      });
+    }
+  };
+
+  const convertFromISO = () => {
+    try {
+      if (!isoInput.trim()) {
+        throw new Error("Empty input");
+      }
+
+      // Clean up the input - handle common formatting issues
+      let cleanInput = isoInput.trim();
+      
+      // Strip surrounding quotes (single or double)
+      cleanInput = cleanInput.replace(/^['"`]|['"`]$/g, '');
+      
+      // Fix common timezone format issues
+      if (cleanInput.includes('+') || cleanInput.includes('-')) {
+        // Ensure timezone offset has proper format (e.g., +05:30 not +0530)
+        cleanInput = cleanInput.replace(/([+-]\d{2})(\d{2})$/, '$1:$2');
+      }
+
+      const date = new Date(cleanInput);
+      if (isNaN(date.getTime())) {
+        throw new Error("Invalid ISO date format");
+      }
+
+      const timestamp = Math.floor(date.getTime() / 1000);
+      updateState({
+        unixOutput: timestamp.toString(),
+        humanOutput: date.toLocaleString(undefined, {
+          weekday: 'long',
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          timeZoneName: 'short'
+        }),
+        isoOutput: date.toISOString()
+      });
+    } catch (error) {
+      updateState({
+        unixOutput: "Invalid ISO date format",
         humanOutput: "",
         isoOutput: ""
       });
@@ -99,7 +147,8 @@ export default function UnixTimeConverter() {
     const newState = {
       ...state,
       unixInput: unixTimestamp.toString(),
-      humanInput: humanDate
+      humanInput: humanDate,
+      isoInput: now.toISOString()
     };
 
     setState(newState);
@@ -142,7 +191,8 @@ export default function UnixTimeConverter() {
         const newState = {
           ...state,
           unixInput: newTime.toString(),
-          humanInput: humanDate
+          humanInput: humanDate,
+          isoInput: newDate.toISOString()
         };
 
         setState(newState);
@@ -171,6 +221,7 @@ export default function UnixTimeConverter() {
     updateState({
       unixInput: "",
       humanInput: "",
+      isoInput: "",
       humanOutput: "",
       unixOutput: "",
       isoOutput: ""
@@ -180,18 +231,29 @@ export default function UnixTimeConverter() {
   return (
     <ToolLayout
       title="Unix Time Converter"
-      description="Convert between Unix timestamps and human-readable dates"
+      description="Convert between Unix timestamps, human-readable dates, and ISO 8601 format"
       icon={<Clock className="h-6 w-6 text-blue-500" />}
       outputValue={unixOutput}
       infoContent={
-        <p>
-          Unix time is the number of seconds since January 1, 1970, 00:00:00 UTC (the Unix epoch).
-          It's widely used in programming and systems administration for storing timestamps in a
-          standardized format that's independent of timezone.
-        </p>
+        <div>
+          <p className="mb-2">
+            Unix time is the number of seconds since January 1, 1970, 00:00:00 UTC (the Unix epoch).
+            It's widely used in programming and systems administration for storing timestamps in a
+            standardized format that's independent of timezone.
+          </p>
+          <p>
+            ISO 8601 is an international standard for date and time representation (e.g., 2023-01-01T12:00:00.000Z).
+            It's commonly used in APIs and data exchange formats.
+          </p>
+        </div>
       }
     >
-      <ToolInput title="Input">
+      <ToolInput title="Input" headerActions={
+        <Button variant="outline" size="sm" onClick={clearAll}>
+          <Trash2 className="h-4 w-4 mr-1" />
+          Clear
+        </Button>
+      }>
         <div className="space-y-4">
           <div>
             <Label htmlFor="unix-input">Unix Timestamp</Label>
@@ -222,32 +284,43 @@ export default function UnixTimeConverter() {
             </div>
           </div>
 
+          <div>
+            <Label htmlFor="iso-input">ISO 8601 Date</Label>
+            <div className="flex space-x-2 mt-1">
+              <Input
+                id="iso-input"
+                type="text"
+                placeholder="2023-01-01T12:00:00.000Z"
+                value={isoInput}
+                onChange={(e) => updateState({ isoInput: e.target.value })}
+                className="tool-input"
+              />
+              <Button onClick={convertFromISO}>Convert</Button>
+            </div>
+          </div>
+
           <div className="flex flex-wrap gap-2 pt-4 border-t">
             <Button variant="outline" onClick={getCurrentTime}>
               <Clock className="h-4 w-4 mr-1" />
-              Current Time
+              Current
             </Button>
             <Button variant="outline" onClick={() => addTime(3600)}>
               <Plus className="h-4 w-4 mr-1" />
-              +1 Hour
+              +1 Hr
             </Button>
             <Button variant="outline" onClick={() => addTime(86400)}>
               <Plus className="h-4 w-4 mr-1" />
-              +1 Day
+              +1 D
             </Button>
             <Button variant="outline" onClick={() => addTime(604800)}>
               <Plus className="h-4 w-4 mr-1" />
-              +1 Week
-            </Button>
-            <Button variant="outline" onClick={clearAll}>
-              <Trash2 className="h-4 w-4 mr-1" />
-              Clear
+              +1 Wk
             </Button>
           </div>
         </div>
       </ToolInput>
 
-      <ToolOutput title="Output" value={unixOutput}>
+      <ToolOutput title="Output" value="" canCopy={false}>
         <div className="space-y-4">
           <div>
             <Label>Human Readable</Label>

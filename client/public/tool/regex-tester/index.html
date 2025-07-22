@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Regex Tester - HandyDevTools</title>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Test and debug regular expressions - Free online developer tool by HandyDevTools. Fast, secure, and client-side processing.">
+    <meta name="keywords" content="Regex Tester, developer tools, online tools, regex, regular expression, test, pattern">
+    <meta name="author" content="HandyDevTools">
+    <meta name="robots" content="index, follow">
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://www.shivasaxena.com/handy-dev-tools/tool/regex-tester">
+    <meta property="og:title" content="Regex Tester - HandyDevTools">
+    <meta property="og:description" content="Test and debug regular expressions">
+    <meta property="og:image" content="https://www.shivasaxena.com/handy-dev-tools/og-image.svg">
+    
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://www.shivasaxena.com/handy-dev-tools/tool/regex-tester">
+    <meta property="twitter:title" content="Regex Tester - HandyDevTools">
+    <meta property="twitter:description" content="Test and debug regular expressions">
+    <meta property="twitter:image" content="https://www.shivasaxena.com/handy-dev-tools/og-image.svg">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://www.shivasaxena.com/handy-dev-tools/tool/regex-tester">
+    
+    <!-- Instant redirect to main app -->
+    <meta http-equiv="refresh" content="0;url=/handy-dev-tools/#!/tool/regex-tester">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/handy-dev-tools/favicon.ico">
+    
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Regex Tester",
+      "description": "Test and debug regular expressions",
+      "url": "https://www.shivasaxena.com/handy-dev-tools/tool/regex-tester",
+      "applicationCategory": "DeveloperApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "isPartOf": {
+        "@type": "WebSite",
+        "name": "HandyDevTools",
+        "url": "https://www.shivasaxena.com/handy-dev-tools/"
+      }
+    }
+    </script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            padding: 2rem;
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .subtitle {
+            margin: 0 0 1rem 0;
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        p {
+            margin: 0;
+            opacity: 0.7;
+            line-height: 1.5;
+        }
+        .fallback {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            display: none;
+        }
+        .fallback a {
+            color: white;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h1>Regex Tester</h1>
+        <div class="subtitle">HandyDevTools</div>
+        <p>Loading your developer tool...</p>
+        
+        <div class="fallback" id="fallback">
+            <p>If you're not redirected automatically:</p>
+            <a href="/handy-dev-tools/#!/tool/regex-tester">Open Regex Tester →</a>
+        </div>
+    </div>
+
+    <script>
+        // Immediate redirect
+        window.location.replace('/handy-dev-tools/#!/tool/regex-tester');
+        
+        // Show fallback after 2 seconds for slow connections
+        setTimeout(function() {
+            document.getElementById('fallback').style.display = 'block';
+        }, 2000);
+    </script>
+</body>
+</html>

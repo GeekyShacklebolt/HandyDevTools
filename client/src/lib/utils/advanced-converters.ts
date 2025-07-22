@@ -253,13 +253,13 @@ export function htmlToJsx(html: string): string {
 
 // Cron expression parser
 export function parseCronExpression(expression: string): string {
-  const parts = expression.trim().split(/\s+/);
+  const cronParts = expression.trim().split(/\s+/);
 
-  if (parts.length !== 5) {
+  if (cronParts.length !== 5) {
     throw new Error('Invalid cron expression. Expected exactly 5 fields (minute, hour, day of month, month, day of week).');
   }
 
-  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = cronParts;
 
   // Helper to validate a cron field
   const validateField = (value: string, min: number, max: number, fieldName: string) => {
@@ -281,29 +281,196 @@ export function parseCronExpression(expression: string): string {
   validateField(month, 1, 12, 'month');
   validateField(dayOfWeek, 0, 6, 'day of week');
 
-  const parseField = (value: string, fieldName: string, min: number, max: number): string => {
-    if (value === '*') return `any ${fieldName}`;
-    if (value.includes('/')) {
-      const [range, step] = value.split('/');
-      const baseRange = range === '*' ? `${min}-${max}` : range;
-      return `every ${step} ${fieldName}(s) in range ${baseRange}`;
-    }
-    if (value.includes('-')) {
-      return `${fieldName}(s) from ${value}`;
-    }
-    if (value.includes(',')) {
-      return `${fieldName}(s): ${value}`;
-    }
-    return `${fieldName} ${value}`;
+  // Helper functions for readable formatting
+  const formatTime = (h: string, m: string) => {
+    if (h === '*' || m === '*') return null;
+    const hourNum = parseInt(h);
+    const minuteNum = parseInt(m);
+    
+    if (hourNum === 0 && minuteNum === 0) return 'midnight';
+    if (hourNum === 12 && minuteNum === 0) return 'noon';
+    
+    const hour12 = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    const minuteStr = minuteNum.toString().padStart(2, '0');
+    
+    return `${hour12}:${minuteStr} ${ampm}`;
   };
 
-  const minuteDesc = parseField(minute, 'minute', 0, 59);
-  const hourDesc = parseField(hour, 'hour', 0, 23);
-  const dayOfMonthDesc = parseField(dayOfMonth, 'day of month', 1, 31);
-  const monthDesc = parseField(month, 'month', 1, 12);
-  const dayOfWeekDesc = parseField(dayOfWeek, 'day of week', 0, 6);
+  const getDayName = (day: string) => {
+    const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    return dayNames[parseInt(day)];
+  };
 
-  let description = `At ${minuteDesc} of ${hourDesc}, on ${dayOfMonthDesc} of ${monthDesc}, and on ${dayOfWeekDesc}`;
+  const getMonthName = (month: string) => {
+    const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    return monthNames[parseInt(month)];
+  };
 
-  return description;
+  const getOrdinal = (num: number) => {
+    const suffix = num % 10 === 1 && num !== 11 ? 'st' : 
+                   num % 10 === 2 && num !== 12 ? 'nd' : 
+                   num % 10 === 3 && num !== 13 ? 'rd' : 'th';
+    return `${num}${suffix}`;
+  };
+
+  // Handle day of week patterns
+  const parseDayOfWeek = (dow: string) => {
+    if (dow === '*') return null;
+    if (dow === '1-5') return 'Monday through Friday';
+    if (dow === '0,6') return 'Saturday and Sunday';
+    
+    if (dow.includes('/')) {
+      const [range, step] = dow.split('/');
+      if (range === '*') {
+        return `every ${getOrdinal(parseInt(step))} day of the week`;
+      } else {
+        return `every ${getOrdinal(parseInt(step))} day of the week starting from ${getDayName(range)}`;
+      }
+    }
+    
+    if (dow.includes('-')) {
+      const [start, end] = dow.split('-');
+      const startDay = getDayName(start);
+      const endDay = getDayName(end);
+      return `${startDay} through ${endDay}`;
+    }
+    
+    if (dow.includes(',')) {
+      const days = dow.split(',').map(d => getDayName(d));
+      return days.length === 2 ? days.join(' and ') : 
+             days.slice(0, -1).join(', ') + ', and ' + days[days.length - 1];
+    }
+    
+    return getDayName(dow);
+  };
+
+  // Parse day of month
+  const parseDayOfMonth = (dom: string) => {
+    if (dom === '*') return null;
+    if (dom.includes('/')) {
+      const [range, step] = dom.split('/');
+      if (range === '*') {
+        return `every ${getOrdinal(parseInt(step))} day`;
+      } else {
+        return `every ${getOrdinal(parseInt(step))} day starting from day ${range}`;
+      }
+    }
+    if (dom.includes(',')) {
+      const days = dom.split(',').map(d => getOrdinal(parseInt(d)));
+      return days.length === 2 ? days.join(' and ') : 
+             days.slice(0, -1).join(', ') + ', and ' + days[days.length - 1];
+    }
+    if (dom.includes('-')) {
+      const [start, end] = dom.split('-');
+      return `${getOrdinal(parseInt(start))} through ${getOrdinal(parseInt(end))}`;
+    }
+    return getOrdinal(parseInt(dom));
+  };
+
+  // Parse month
+  const parseMonth = (m: string) => {
+    if (m === '*') return null;
+    if (m.includes('/')) {
+      const [range, step] = m.split('/');
+      if (range === '*') {
+        return `every ${getOrdinal(parseInt(step))} month`;
+      } else {
+        return `every ${getOrdinal(parseInt(step))} month starting from ${getMonthName(range)}`;
+      }
+    }
+    if (m.includes(',')) {
+      const months = m.split(',').map(mo => getMonthName(mo));
+      return months.length === 2 ? months.join(' and ') : 
+             months.slice(0, -1).join(', ') + ', and ' + months[months.length - 1];
+    }
+    if (m.includes('-')) {
+      const [start, end] = m.split('-');
+      return `${getMonthName(start)} through ${getMonthName(end)}`;
+    }
+    return getMonthName(m);
+  };
+
+  // Build comprehensive description
+  const timeStr = formatTime(hour, minute);
+  const dayOfWeekStr = parseDayOfWeek(dayOfWeek);
+  const dayOfMonthStr = parseDayOfMonth(dayOfMonth);
+  const monthStr = parseMonth(month);
+
+  // Handle frequency patterns first
+  if (minute.includes('/') && hour === '*' && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    const step = minute.split('/')[1];
+    return `Every ${step} minutes`;
+  }
+  
+  if (minute === '*' && hour.includes('/') && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    const step = hour.split('/')[1];
+    return `Every ${step} hours`;
+  }
+
+  if (minute !== '*' && hour.includes('/') && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    const step = hour.split('/')[1];
+    const stepNum = parseInt(step);
+    if (stepNum === 1) {
+      return `At minute ${minute} past every hour.`;
+    } else {
+      return `At minute ${minute} past every ${getOrdinal(stepNum)} hour.`;
+    }
+  }
+
+  if (minute === '0' && hour === '*' && dayOfMonth === '*' && month === '*' && dayOfWeek === '*') {
+    return 'Every hour';
+  }
+
+  // Build description parts
+  let descriptionParts: string[] = [];
+  
+  if (timeStr) {
+    descriptionParts.push(`At ${timeStr}`);
+  } else if (minute !== '*' && hour !== '*') {
+    const hourNum = parseInt(hour);
+    const minuteNum = parseInt(minute);
+    const hour12 = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    descriptionParts.push(`At ${hour12}:${minuteNum.toString().padStart(2, '0')} ${ampm}`);
+  } else if (minute !== '*') {
+    descriptionParts.push(`At minute ${minute}`);
+  } else if (hour !== '*') {
+    const hourNum = parseInt(hour);
+    const hour12 = hourNum === 0 ? 12 : hourNum > 12 ? hourNum - 12 : hourNum;
+    const ampm = hourNum >= 12 ? 'PM' : 'AM';
+    descriptionParts.push(`At ${hour12}:00 ${ampm}`);
+  }
+
+  // Add day constraints
+  if (dayOfMonthStr && dayOfWeekStr) {
+    descriptionParts.push(`on day-of-month ${dayOfMonthStr} and on ${dayOfWeekStr}`);
+  } else if (dayOfMonthStr) {
+    if (dayOfMonth.includes('/')) {
+      descriptionParts.push(`on ${dayOfMonthStr}`);
+    } else {
+      descriptionParts.push(`on the ${dayOfMonthStr} day of the month`);
+    }
+  } else if (dayOfWeekStr) {
+    descriptionParts.push(`on ${dayOfWeekStr}`);
+  }
+
+  // Add month constraint
+  if (monthStr) {
+    descriptionParts.push(`in ${monthStr}`);
+  }
+
+  // Join parts appropriately
+  if (descriptionParts.length === 0) {
+    return 'Every minute';
+  }
+
+  let result = descriptionParts.join(' ');
+  
+  // Add period at the end
+  if (!result.endsWith('.')) {
+    result += '.';
+  }
+
+  return result;
 }

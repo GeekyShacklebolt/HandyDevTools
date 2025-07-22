@@ -30,11 +30,44 @@ export default function CronParser() {
 
       const description = parseCronExpression(input);
 
-      // Generate next run times (simplified)
+      // Generate next run times based on the actual cron expression
       const now = new Date();
       const runs = [];
+
+      // Simple calculation for common patterns
+      const parts = input.trim().split(/\s+/);
+      const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
       for (let i = 0; i < 5; i++) {
-        const nextRun = new Date(now.getTime() + (i * 60 * 60 * 1000)); // Simplified: every hour
+        let nextRun = new Date(now);
+
+        // Adjust based on minute pattern
+        if (minute.includes('/')) {
+          const step = parseInt(minute.split('/')[1]);
+          const currentMinute = nextRun.getMinutes();
+          const nextMinute = Math.ceil((currentMinute + 1) / step) * step;
+          nextRun.setMinutes(nextMinute, 0, 0);
+          if (nextMinute >= 60) {
+            nextRun.setHours(nextRun.getHours() + 1);
+            nextRun.setMinutes(nextMinute % 60);
+          }
+        } else if (minute === '*') {
+          nextRun.setMinutes(nextRun.getMinutes() + 1, 0, 0);
+        } else {
+          // For specific minutes, just add an hour as fallback
+          nextRun.setHours(nextRun.getHours() + 1);
+        }
+
+        // Add the interval for subsequent runs
+        if (i > 0) {
+          if (minute.includes('/')) {
+            const step = parseInt(minute.split('/')[1]);
+            nextRun.setMinutes(nextRun.getMinutes() + (step * i));
+          } else {
+            nextRun.setHours(nextRun.getHours() + i);
+          }
+        }
+
         runs.push(nextRun.toLocaleString());
       }
 
@@ -87,7 +120,7 @@ export default function CronParser() {
             Cron expressions are used to schedule tasks in Unix-like systems. The format is:
           </p>
           <div className="font-mono text-sm bg-muted p-2 rounded mb-4">
-            minute hour day-of-month month day-of-week [year]
+            minute hour day-of-month month day-of-week
           </div>
           <p>Each field can contain specific values, ranges, lists, or special characters like * and /.</p>
         </div>
@@ -99,7 +132,7 @@ export default function CronParser() {
             <Label htmlFor="cron-input">Cron Expression</Label>
             <Input
               id="cron-input"
-              placeholder="0 12 * * 1-5"
+              placeholder="min hour day month day-of-week"
               value={input}
               onChange={(e) => updateState({ input: e.target.value })}
               className="tool-input"
@@ -188,7 +221,7 @@ export default function CronParser() {
               <h4 className="text-blue-900 dark:text-blue-200 font-medium mb-2">Field Breakdown</h4>
               <div className="text-blue-800 dark:text-blue-300 text-sm font-mono">
                 {input.split(' ').map((field, index) => {
-                  const labels = ['minute', 'hour', 'day-of-month', 'month', 'day-of-week', 'year'];
+                  const labels = ['minute', 'hour', 'day-of-month', 'month', 'day-of-week'];
                   return (
                     <div key={index}>
                       {labels[index]}: {field}

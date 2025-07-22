@@ -17,12 +17,13 @@ export default function JSONFormatter() {
     indentSize: "2",
     jsonPath: "",
     pathResult: "",
+    pathResultParsed: null as any,
     parsedJson: null as any,
     collapsedNodes: [] as string[],
     displayMode: "formatted" as "formatted" | "minified"
   });
 
-  const { input, output, isValid, indentSize, jsonPath, pathResult, parsedJson, displayMode } = state;
+  const { input, output, isValid, indentSize, jsonPath, pathResult, pathResultParsed, parsedJson, displayMode } = state;
 
   const updateState = (updates: Partial<typeof state>) => {
     setState({ ...state, ...updates });
@@ -85,24 +86,30 @@ export default function JSONFormatter() {
 
   const searchJsonPath = () => {
     if (!parsedJson) {
-      updateState({ pathResult: "Please format or validate JSON first" });
+      updateState({ pathResult: "Please format or validate JSON first", pathResultParsed: null });
       return;
     }
 
     if (!jsonPath.trim()) {
-      updateState({ pathResult: "" });
+      updateState({ pathResult: "", pathResultParsed: null });
       return;
     }
 
     try {
       const result = JSONPath({ path: jsonPath, json: parsedJson });
       if (result.length === 0) {
-        updateState({ pathResult: "No matches found" });
+        updateState({ pathResult: "No matches found", pathResultParsed: null });
       } else {
-        updateState({ pathResult: JSON.stringify(result, null, 2) });
+        updateState({ 
+          pathResult: JSON.stringify(result, null, 2),
+          pathResultParsed: result
+        });
       }
     } catch (error) {
-      updateState({ pathResult: `JSONPath Error: ${error instanceof Error ? error.message : 'Invalid path'}` });
+      updateState({ 
+        pathResult: `JSONPath Error: ${error instanceof Error ? error.message : 'Invalid path'}`,
+        pathResultParsed: null
+      });
     }
   };
 
@@ -143,6 +150,7 @@ export default function JSONFormatter() {
       isValid: null,
       jsonPath: "",
       pathResult: "",
+      pathResultParsed: null,
       parsedJson: null,
       displayMode: "formatted"
     });
@@ -340,7 +348,7 @@ export default function JSONFormatter() {
                 <div
                   className="text-foreground font-mono text-sm whitespace-pre-wrap"
                   dangerouslySetInnerHTML={{
-                    __html: highlightJSON(pathResult)
+                    __html: pathResultParsed ? renderCollapsibleJSON(pathResultParsed, "pathResult") : highlightJSON(pathResult)
                   }}
                 />
               ) : (

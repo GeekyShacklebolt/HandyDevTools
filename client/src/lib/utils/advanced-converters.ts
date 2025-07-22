@@ -255,11 +255,31 @@ export function htmlToJsx(html: string): string {
 export function parseCronExpression(expression: string): string {
   const parts = expression.trim().split(/\s+/);
 
-  if (parts.length !== 5 && parts.length !== 6) {
-    throw new Error('Invalid cron expression. Expected 5 or 6 parts.');
+  if (parts.length !== 5) {
+    throw new Error('Invalid cron expression. Expected exactly 5 fields (minute, hour, day of month, month, day of week).');
   }
 
-  const [minute, hour, dayOfMonth, month, dayOfWeek, year] = parts;
+  const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
+
+  // Helper to validate a cron field
+  const validateField = (value: string, min: number, max: number, fieldName: string) => {
+    // Accept *, single number, ranges, lists, steps
+    const valid = /^\*|(\d+)(-(\d+))?(,\d+)*|(\*|\d+)(\/(\d+))?$/.test(value);
+    if (!valid) throw new Error(`Invalid value for ${fieldName}: '${value}'`);
+    // Check all numbers in the field are within range
+    const numbers = value.split(/[^\d]+/).filter(Boolean).map(Number);
+    for (const n of numbers) {
+      if (isNaN(n) || n < min || n > max) {
+        throw new Error(`Value for ${fieldName} out of range (${min}-${max}): '${n}'`);
+      }
+    }
+  };
+
+  validateField(minute, 0, 59, 'minute');
+  validateField(hour, 0, 23, 'hour');
+  validateField(dayOfMonth, 1, 31, 'day of month');
+  validateField(month, 1, 12, 'month');
+  validateField(dayOfWeek, 0, 6, 'day of week');
 
   const parseField = (value: string, fieldName: string, min: number, max: number): string => {
     if (value === '*') return `any ${fieldName}`;
@@ -284,11 +304,6 @@ export function parseCronExpression(expression: string): string {
   const dayOfWeekDesc = parseField(dayOfWeek, 'day of week', 0, 6);
 
   let description = `At ${minuteDesc} of ${hourDesc}, on ${dayOfMonthDesc} of ${monthDesc}, and on ${dayOfWeekDesc}`;
-
-  if (year) {
-    const yearDesc = parseField(year, 'year', 1970, 3000);
-    description += `, in ${yearDesc}`;
-  }
 
   return description;
 }

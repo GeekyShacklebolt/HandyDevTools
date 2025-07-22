@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,6 +51,16 @@ export default function CronParser() {
       });
     }
   };
+
+  // Auto-parse on input change
+  useEffect(() => {
+    if (input.trim()) {
+      parseCron();
+    } else {
+      updateState({ output: "", nextRuns: [], error: "" });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [input]);
 
   const clearAll = () => {
     updateState({
@@ -139,7 +149,7 @@ export default function CronParser() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button onClick={parseCron}>Parse Expression</Button>
+            {/* Parse Expression button removed for auto-parse */}
             <Button variant="outline" onClick={clearAll}>Clear</Button>
           </div>
         </div>

@@ -21,6 +21,100 @@ export default function CronParser() {
     setState({ ...state, ...updates });
   };
 
+  // Helper function to parse cron field values
+  const parseCronField = (field: string, min: number, max: number): number[] => {
+    if (field === '*') {
+      return Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    }
+    
+    if (field.includes('/')) {
+      const [range, step] = field.split('/');
+      const stepNum = parseInt(step);
+      const values = [];
+      
+      if (range === '*') {
+        for (let i = min; i <= max; i += stepNum) {
+          values.push(i);
+        }
+      } else {
+        const start = parseInt(range);
+        for (let i = start; i <= max; i += stepNum) {
+          values.push(i);
+        }
+      }
+      return values;
+    }
+    
+    if (field.includes('-')) {
+      const [start, end] = field.split('-').map(Number);
+      return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+    }
+    
+    if (field.includes(',')) {
+      return field.split(',').map(Number);
+    }
+    
+    return [parseInt(field)];
+  };
+
+  // Function to calculate next cron runs
+  const calculateNextRuns = (cronExpression: string, count: number): string[] => {
+    try {
+      const parts = cronExpression.trim().split(/\s+/);
+      if (parts.length !== 5) return [];
+      
+      const [minuteField, hourField, dayField, monthField, dowField] = parts;
+      
+      const minutes = parseCronField(minuteField, 0, 59);
+      const hours = parseCronField(hourField, 0, 23);
+      const days = parseCronField(dayField, 1, 31);
+      const months = parseCronField(monthField, 1, 12);
+      const daysOfWeek = parseCronField(dowField, 0, 6);
+      
+      const now = new Date();
+      const runs: string[] = [];
+      let current = new Date(now);
+      current.setSeconds(0, 0); // Reset seconds and milliseconds
+      
+      // Start from next minute
+      current.setMinutes(current.getMinutes() + 1);
+      
+      // Find next runs
+      for (let found = 0; found < count && found < 1000; ) { // Safety limit
+        const currentMinute = current.getMinutes();
+        const currentHour = current.getHours();
+        const currentDay = current.getDate();
+        const currentMonth = current.getMonth() + 1;
+        const currentDow = current.getDay();
+        
+        // Check if current time matches cron expression
+        const minuteMatch = minutes.includes(currentMinute);
+        const hourMatch = hours.includes(currentHour);
+        const dayMatch = days.includes(currentDay);
+        const monthMatch = months.includes(currentMonth);
+        const dowMatch = daysOfWeek.includes(currentDow);
+        
+        // For day matching: either day-of-month OR day-of-week must match (if both are specified)
+        const dayCondition = (dayField === '*' && dowField === '*') || 
+                            (dayField === '*' && dowMatch) ||
+                            (dowField === '*' && dayMatch) ||
+                            (dayField !== '*' && dowField !== '*' && (dayMatch || dowMatch));
+        
+        if (minuteMatch && hourMatch && dayCondition && monthMatch) {
+          runs.push(current.toLocaleString());
+          found++;
+        }
+        
+        // Move to next minute
+        current.setMinutes(current.getMinutes() + 1);
+      }
+      
+      return runs;
+    } catch (error) {
+      return [];
+    }
+  };
+
     const parseCron = () => {
     try {
       if (!input.trim()) {
@@ -31,45 +125,7 @@ export default function CronParser() {
       const description = parseCronExpression(input);
 
       // Generate next run times based on the actual cron expression
-      const now = new Date();
-      const runs = [];
-
-      // Simple calculation for common patterns
-      const parts = input.trim().split(/\s+/);
-      const [minute, hour, dayOfMonth, month, dayOfWeek] = parts;
-
-      for (let i = 0; i < 5; i++) {
-        let nextRun = new Date(now);
-
-        // Adjust based on minute pattern
-        if (minute.includes('/')) {
-          const step = parseInt(minute.split('/')[1]);
-          const currentMinute = nextRun.getMinutes();
-          const nextMinute = Math.ceil((currentMinute + 1) / step) * step;
-          nextRun.setMinutes(nextMinute, 0, 0);
-          if (nextMinute >= 60) {
-            nextRun.setHours(nextRun.getHours() + 1);
-            nextRun.setMinutes(nextMinute % 60);
-          }
-        } else if (minute === '*') {
-          nextRun.setMinutes(nextRun.getMinutes() + 1, 0, 0);
-        } else {
-          // For specific minutes, just add an hour as fallback
-          nextRun.setHours(nextRun.getHours() + 1);
-        }
-
-        // Add the interval for subsequent runs
-        if (i > 0) {
-          if (minute.includes('/')) {
-            const step = parseInt(minute.split('/')[1]);
-            nextRun.setMinutes(nextRun.getMinutes() + (step * i));
-          } else {
-            nextRun.setHours(nextRun.getHours() + i);
-          }
-        }
-
-        runs.push(nextRun.toLocaleString());
-      }
+      const runs = calculateNextRuns(input, 5);
 
       updateState({
         output: description,

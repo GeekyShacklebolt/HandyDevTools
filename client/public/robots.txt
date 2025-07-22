@@ -4,5 +4,5 @@ Allow: /
 # Sitemap
 Sitemap: https://www.shivasaxena.com/handy-dev-tools/sitemap.xml
 
-# Crawl delay (optional)
+# Crawl-delay
 Crawl-delay: 1

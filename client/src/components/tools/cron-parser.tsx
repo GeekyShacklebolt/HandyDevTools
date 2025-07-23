@@ -57,7 +57,7 @@ export default function CronParser() {
     return [parseInt(field)];
   };
 
-  // Function to calculate next cron runs
+  // Optimized function to calculate next cron runs
   const calculateNextRuns = (cronExpression: string, count: number): string[] => {
     try {
       const parts = cronExpression.trim().split(/\s+/);
@@ -73,34 +73,70 @@ export default function CronParser() {
       
       const now = new Date();
       const runs: string[] = [];
-      let current = new Date(now);
-      current.setSeconds(0, 0); // Reset seconds and milliseconds
       
       // Start from next minute
+      let current = new Date(now);
+      current.setSeconds(0, 0);
       current.setMinutes(current.getMinutes() + 1);
       
-      // Find next runs
-      for (let found = 0; found < count && found < 1000; ) { // Safety limit
+      // Limit search to reasonable timeframe (max 2 years)
+      const maxDate = new Date(now);
+      maxDate.setFullYear(maxDate.getFullYear() + 2);
+      
+      let found = 0;
+      let iterations = 0;
+      const maxIterations = 100000; // Safety limit
+      
+      while (found < count && current <= maxDate && iterations < maxIterations) {
+        iterations++;
+        
         const currentMinute = current.getMinutes();
         const currentHour = current.getHours();
         const currentDay = current.getDate();
         const currentMonth = current.getMonth() + 1;
         const currentDow = current.getDay();
         
-        // Check if current time matches cron expression
-        const minuteMatch = minutes.includes(currentMinute);
-        const hourMatch = hours.includes(currentHour);
+        // Quick pre-checks to skip expensive operations
+        if (!months.includes(currentMonth)) {
+          // Skip to next month
+          current.setMonth(current.getMonth() + 1, 1);
+          current.setHours(0, 0, 0, 0);
+          continue;
+        }
+        
+        if (!hours.includes(currentHour)) {
+          // Skip to next matching hour
+          const nextHour = hours.find(h => h > currentHour) || hours[0];
+          if (nextHour > currentHour) {
+            current.setHours(nextHour, 0, 0, 0);
+          } else {
+            current.setDate(current.getDate() + 1);
+            current.setHours(nextHour, 0, 0, 0);
+          }
+          continue;
+        }
+        
+        if (!minutes.includes(currentMinute)) {
+          // Skip to next matching minute
+          const nextMinute = minutes.find(m => m > currentMinute) || minutes[0];
+          if (nextMinute > currentMinute) {
+            current.setMinutes(nextMinute, 0, 0);
+          } else {
+            current.setHours(current.getHours() + 1, nextMinute, 0, 0);
+          }
+          continue;
+        }
+        
+        // Check day conditions
         const dayMatch = days.includes(currentDay);
-        const monthMatch = months.includes(currentMonth);
         const dowMatch = daysOfWeek.includes(currentDow);
         
-        // For day matching: either day-of-month OR day-of-week must match (if both are specified)
         const dayCondition = (dayField === '*' && dowField === '*') || 
                             (dayField === '*' && dowMatch) ||
                             (dowField === '*' && dayMatch) ||
-                            (dayField !== '*' && dowField !== '*' && (dayMatch || dowMatch));
+                            (dayField !== '*' && dowField !== '*' && dayMatch && dowMatch);
         
-        if (minuteMatch && hourMatch && dayCondition && monthMatch) {
+        if (dayCondition) {
           runs.push(current.toLocaleString());
           found++;
         }
@@ -141,13 +177,17 @@ export default function CronParser() {
     }
   };
 
-  // Auto-parse on input change
+  // Auto-parse on input change with debouncing
   useEffect(() => {
-    if (input.trim()) {
-      parseCron();
-    } else {
-      updateState({ output: "", nextRuns: [], error: "" });
-    }
+    const timeoutId = setTimeout(() => {
+      if (input.trim()) {
+        parseCron();
+      } else {
+        updateState({ output: "", nextRuns: [], error: "" });
+      }
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input]);
 
@@ -263,7 +303,7 @@ export default function CronParser() {
 
           {nextRuns.length > 0 && (
             <div>
-              <Label>Next 5 Run Times (Estimated)</Label>
+              <Label>Next Run Times (Estimated)</Label>
               <div className="p-3 bg-muted rounded-md font-mono text-sm mt-1">
                 {nextRuns.map((run, index) => (
                   <div key={index}>{run}</div>
